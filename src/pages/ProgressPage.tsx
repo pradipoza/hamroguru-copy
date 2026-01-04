@@ -1,0 +1,130 @@
+import { currentStudent, subjects } from '@/lib/mockData';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { TrendingUp, Award, Target, BookOpen } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export default function ProgressPage() {
+  const overallProgress = 68;
+  const completedAssignments = 24;
+  const totalAssignments = 35;
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-foreground">My Progress</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Track your academic performance
+        </p>
+      </div>
+
+      {/* Overview Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">{overallProgress}%</p>
+                <p className="text-xs text-muted-foreground">Overall</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <Target className="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">{completedAssignments}</p>
+                <p className="text-xs text-muted-foreground">Completed</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">{currentStudent.streakDays}</p>
+                <p className="text-xs text-muted-foreground">Day Streak</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                <Award className="w-5 h-5 text-info" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold">{currentStudent.totalPoints}</p>
+                <p className="text-xs text-muted-foreground">Points</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Subject Progress */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Subject Progress</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {subjects.map((subject) => {
+            const progress = Math.floor(Math.random() * 40) + 50; // Mock progress
+            return (
+              <div key={subject.id} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span>{subject.icon}</span>
+                    <span className="font-medium">{subject.name}</span>
+                  </div>
+                  <span className="text-muted-foreground">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[
+              { action: 'Completed homework', subject: 'Mathematics', time: '2 hours ago' },
+              { action: 'Submitted notes', subject: 'Science', time: '1 day ago' },
+              { action: 'Scored 85% in quiz', subject: 'English', time: '2 days ago' },
+              { action: 'Completed homework', subject: 'Computer Science', time: '3 days ago' },
+            ].map((activity, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <div>
+                  <p className="text-sm font-medium">{activity.action}</p>
+                  <p className="text-xs text-muted-foreground">{activity.subject}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">{activity.time}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
