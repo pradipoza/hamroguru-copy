@@ -1,4 +1,7 @@
-import { usePendingTasks, type PendingTask } from '@/hooks/useStudentData';
+import { mockPendingTasks } from '@/lib/demoMockData';
+
+// Define the type based on the mock data structure for the demo
+type PendingTask = typeof mockPendingTasks[0];
 import { cn } from '@/lib/utils';
 import { FileText, BookOpen, ClipboardCheck, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -40,7 +43,8 @@ function formatDueDate(date: Date, isOverdue: boolean): string {
 }
 
 export default function PendingTasksPage() {
-  const { data: tasks, isLoading } = usePendingTasks();
+  const tasks = mockPendingTasks;
+  const isLoading = false;
   
   const overdueTasks = tasks?.filter(t => t.isOverdue) || [];
   const upcomingTasks = tasks?.filter(t => !t.isOverdue) || [];

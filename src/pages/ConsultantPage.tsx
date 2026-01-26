@@ -4,6 +4,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Bot, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { mockConsultantChat } from '@/lib/demoMockData';
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -11,17 +13,8 @@ interface Message {
   timestamp: Date;
 }
 
-const initialMessages: Message[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    content: 'नमस्ते! I\'m your personal academic consultant. I can help you with study planning, career guidance, exam strategies, or any school-related concerns. How can I assist you today?',
-    timestamp: new Date(),
-  },
-];
-
 export default function ConsultantPage() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>(mockConsultantChat);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 

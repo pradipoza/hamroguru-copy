@@ -1,5 +1,5 @@
 import { Subject } from '@/lib/types';
-import { useNotesBySubject } from '@/hooks/useStudentData';
+import { mockMathNotes } from '@/lib/demoMockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,9 @@ interface NotesTabProps {
 }
 
 export function NotesTab({ subject }: NotesTabProps) {
-  const { data: notes, isLoading } = useNotesBySubject(subject.id);
+  // For the demo, we'll show math notes for any subject.
+  const notes = mockMathNotes;
+  const isLoading = false;
 
   if (isLoading) {
     return (

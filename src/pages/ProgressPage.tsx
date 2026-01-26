@@ -1,13 +1,19 @@
-import { currentStudent, subjects } from '@/lib/mockData';
+import { mockProgressData } from '@/lib/demoMockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, Award, Target, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function ProgressPage() {
-  const overallProgress = 68;
-  const completedAssignments = 24;
-  const totalAssignments = 35;
+  const { 
+    overallProgress, 
+    completedAssignments, 
+    totalAssignments, 
+    streakDays, 
+    totalPoints, 
+    subjectProgress, 
+    recentActivity 
+  } = mockProgressData;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -55,7 +61,7 @@ export default function ProgressPage() {
                 <BookOpen className="w-5 h-5 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">{currentStudent.streakDays}</p>
+                <p className="text-2xl font-semibold">{streakDays}</p>
                 <p className="text-xs text-muted-foreground">Day Streak</p>
               </div>
             </div>
@@ -69,7 +75,7 @@ export default function ProgressPage() {
                 <Award className="w-5 h-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">{currentStudent.totalPoints}</p>
+                <p className="text-2xl font-semibold">{totalPoints}</p>
                 <p className="text-xs text-muted-foreground">Points</p>
               </div>
             </div>
@@ -83,21 +89,18 @@ export default function ProgressPage() {
           <CardTitle className="text-base font-medium">Subject Progress</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {subjects.map((subject) => {
-            const progress = Math.floor(Math.random() * 40) + 50; // Mock progress
-            return (
-              <div key={subject.id} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span>{subject.icon}</span>
-                    <span className="font-medium">{subject.name}</span>
-                  </div>
-                  <span className="text-muted-foreground">{progress}%</span>
+          {subjectProgress.map((subject) => (
+            <div key={subject.subject} className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span>{subject.icon}</span>
+                  <span className="font-medium">{subject.subject}</span>
                 </div>
-                <Progress value={progress} className="h-2" />
+                <span className="text-muted-foreground">{subject.progress}%</span>
               </div>
-            );
-          })}
+              <Progress value={subject.progress} className="h-2" />
+            </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -108,12 +111,7 @@ export default function ProgressPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[
-              { action: 'Completed homework', subject: 'Mathematics', time: '2 hours ago' },
-              { action: 'Submitted notes', subject: 'Science', time: '1 day ago' },
-              { action: 'Scored 85% in quiz', subject: 'English', time: '2 days ago' },
-              { action: 'Completed homework', subject: 'Computer Science', time: '3 days ago' },
-            ].map((activity, i) => (
+            {recentActivity.map((activity, i) => (
               <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                 <div>
                   <p className="text-sm font-medium">{activity.action}</p>

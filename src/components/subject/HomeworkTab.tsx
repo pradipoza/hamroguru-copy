@@ -1,5 +1,5 @@
 import { Subject } from '@/lib/types';
-import { useHomeworkBySubject } from '@/hooks/useStudentData';
+import { mockMathHomework } from '@/lib/demoMockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -70,7 +70,9 @@ function HomeworkCard({ homework }: { homework: any }) {
 }
 
 export function HomeworkTab({ subject }: HomeworkTabProps) {
-  const { data: homework, isLoading } = useHomeworkBySubject(subject.id);
+  // For the demo, we'll show math homework for any subject.
+  const homework = mockMathHomework;
+  const isLoading = false;
 
   if (isLoading) {
     return (

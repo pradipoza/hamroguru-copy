@@ -1,5 +1,5 @@
 import { Subject } from '@/lib/types';
-import { useTestsBySubject } from '@/hooks/useStudentData';
+import { mockMathTests } from '@/lib/demoMockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,9 @@ function TestCard({ test }: { test: any }) {
 }
 
 export function TestsTab({ subject }: TestsTabProps) {
-  const { data: tests, isLoading } = useTestsBySubject(subject.id);
+  // For the demo, we'll show math tests for any subject.
+  const tests = mockMathTests;
+  const isLoading = false;
 
   if (isLoading) {
     return (

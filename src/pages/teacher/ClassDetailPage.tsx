@@ -16,192 +16,23 @@ import {
   Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import {
+  mockTeacherClasses,
+  mockClassStudents,
+  mockAssignments,
+  mockSubmissionsToGrade,
+} from '@/lib/demoMockData';
 
 export default function ClassDetailPage() {
   const { classId } = useParams();
-  const { user } = useAuth();
 
-  // Fetch class info
-  const { data: classInfo, isLoading: classLoading } = useQuery({
-    queryKey: ['classDetail', classId],
-    queryFn: async () => {
-      const { data: classData, error } = await supabase
-        .from('classes')
-        .select('*, schools(name)')
-        .eq('id', classId)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!classData) return null;
-
-      // Get subject for this teacher's assignment
-      const { data: assignment } = await supabase
-        .from('teacher_class_assignments')
-        .select('subjects(name, code)')
-        .eq('class_id', classId)
-        .eq('teacher_id', user?.id)
-        .maybeSingle();
-
-      const subjectData = (assignment as any)?.subjects;
-
-      return {
-        id: classData.id,
-        name: `Grade ${classData.grade}${classData.section}`,
-        grade: classData.grade,
-        section: classData.section,
-        subjectName: subjectData?.name || 'Unknown',
-        subjectCode: subjectData?.code || '',
-      };
-    },
-    enabled: !!classId && !!user?.id,
-  });
-
-  // Fetch students
-  const { data: students, isLoading: studentsLoading } = useQuery({
-    queryKey: ['classStudents', classId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('student_profiles')
-        .select(`
-          id,
-          user_id,
-          profiles:user_id(full_name)
-        `)
-        .eq('class_id', classId);
-
-      if (error) throw error;
-
-      // Get submission stats for each student
-      const studentsWithStats = await Promise.all(
-        (data || []).map(async (student) => {
-          const profileData = student.profiles as any;
-
-          const { data: submissions } = await supabase
-            .from('homework_submissions')
-            .select('score, status, submitted_at')
-            .eq('student_id', student.user_id);
-
-          const scores = (submissions || []).filter(s => s.score !== null).map(s => s.score || 0);
-          const avgScore = scores.length > 0 
-            ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) 
-            : 0;
-
-          const totalSubmissions = submissions?.length || 0;
-          const { count: totalAssignments } = await supabase
-            .from('homework_assignments')
-            .select('*', { count: 'exact', head: true })
-            .eq('class_id', classId);
-
-          const submissionRate = totalAssignments && totalAssignments > 0 
-            ? Math.round((totalSubmissions / totalAssignments) * 100) 
-            : 0;
-
-          const lastSubmission = submissions?.sort((a, b) => 
-            new Date(b.submitted_at || 0).getTime() - new Date(a.submitted_at || 0).getTime()
-          )[0];
-
-          return {
-            id: student.id,
-            userId: student.user_id,
-            name: profileData?.full_name || 'Unknown',
-            averageScore: avgScore,
-            submissionRate,
-            lastActive: new Date(lastSubmission?.submitted_at || Date.now() - 86400000),
-          };
-        })
-      );
-
-      return studentsWithStats.sort((a, b) => b.averageScore - a.averageScore);
-    },
-    enabled: !!classId,
-  });
-
-  // Fetch assignments
-  const { data: assignments, isLoading: assignmentsLoading } = useQuery({
-    queryKey: ['classAssignments', classId, user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('homework_assignments')
-        .select('*')
-        .eq('class_id', classId)
-        .eq('teacher_id', user?.id)
-        .order('due_date', { ascending: false });
-
-      if (error) throw error;
-
-      const assignmentsWithStats = await Promise.all(
-        (data || []).map(async (assignment) => {
-          const { count: studentCount } = await supabase
-            .from('student_profiles')
-            .select('*', { count: 'exact', head: true })
-            .eq('class_id', classId);
-
-          const { data: submissions } = await supabase
-            .from('homework_submissions')
-            .select('status, score')
-            .eq('assignment_id', assignment.id);
-
-          const submittedCount = (submissions || []).filter(s => 
-            ['submitted', 'checked', 'reviewed'].includes(s.status)
-          ).length;
-          const gradedCount = (submissions || []).filter(s => 
-            ['checked', 'reviewed'].includes(s.status)
-          ).length;
-
-          return {
-            id: assignment.id,
-            title: assignment.title,
-            chapter: assignment.chapter,
-            dueDate: new Date(assignment.due_date),
-            totalStudents: studentCount || 0,
-            submittedCount,
-            gradedCount,
-          };
-        })
-      );
-
-      return assignmentsWithStats;
-    },
-    enabled: !!classId && !!user?.id,
-  });
-
-  // Fetch pending submissions
-  const { data: pendingSubmissions } = useQuery({
-    queryKey: ['classPendingSubmissions', classId, user?.id],
-    queryFn: async () => {
-      const { data: assignmentIds } = await supabase
-        .from('homework_assignments')
-        .select('id, title')
-        .eq('class_id', classId)
-        .eq('teacher_id', user?.id);
-
-      if (!assignmentIds || assignmentIds.length === 0) return [];
-
-      const ids = assignmentIds.map(a => a.id);
-      const assignmentMap = new Map(assignmentIds.map(a => [a.id, a.title]));
-
-      const { data: submissions, error } = await supabase
-        .from('homework_submissions')
-        .select('*, profiles:student_id(full_name)')
-        .in('assignment_id', ids)
-        .eq('status', 'submitted');
-
-      if (error) throw error;
-
-      return (submissions || []).map(s => ({
-        id: s.id,
-        studentName: (s.profiles as any)?.full_name || 'Unknown',
-        homeworkTitle: assignmentMap.get(s.assignment_id) || 'Unknown',
-        aiSuggestion: (s.ai_feedback as any)?.suggestion || null,
-      }));
-    },
-    enabled: !!classId && !!user?.id,
-  });
-
-  const isLoading = classLoading || studentsLoading || assignmentsLoading;
+  const classInfoFromMock = mockTeacherClasses.find(c => c.classId === classId);
+  const classInfo = classInfoFromMock ? { ...classInfoFromMock, name: classInfoFromMock.className } : null;
+  
+  const students = mockClassStudents;
+  const assignments = mockAssignments;
+  const pendingSubmissions = mockSubmissionsToGrade;
+  const isLoading = false;
 
   if (isLoading) {
     return (

@@ -24,21 +24,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
-import { subjects } from '@/lib/mockData';
 import {
-  studentProfile,
-  homeworkHistory,
-  testHistory,
-  noteHistory,
-  learningInsights,
-  recentActivity,
-  getHomeworkStats,
-  getTestStats,
-  getNoteStats,
-} from '@/lib/studentProfileData';
+  mockStudentProfile as studentProfile,
+  mockMathHomework as homeworkHistory,
+  mockMathTests as testHistory,
+  mockMathNotes as noteHistory,
+  mockLearningInsights as learningInsights,
+  mockRecentActivityForProfile as recentActivity,
+  mockSubjects as subjects,
+} from '@/lib/demoMockData';
 
 const StudentProfilePage = () => {
   const [activeTab, setActiveTab] = useState('overview');
+
+  const getHomeworkStats = () => {
+    const total = homeworkHistory.length;
+    const completed = homeworkHistory.filter(h => h.status === 'checked' || h.status === 'submitted').length;
+    const missed = homeworkHistory.filter(h => h.status === 'missed').length;
+    const late = homeworkHistory.filter(h => h.status === 'late').length;
+    const pending = homeworkHistory.filter(h => h.status === 'pending').length;
+    const checked = homeworkHistory.filter(h => h.status === 'checked');
+    const avgScore = checked.reduce((acc, h) => acc + (h.score || 0), 0) / (checked.length || 1);
+    return { total, completed, missed, late, pending, avgScore };
+  };
+
+  const getTestStats = () => {
+    const total = testHistory.length;
+    const completed = testHistory.filter(t => t.status === 'completed').length;
+    const upcoming = testHistory.filter(t => t.status === 'upcoming').length;
+    const completedTests = testHistory.filter(t => t.status === 'completed' && t.score !== undefined);
+    const avgScore = completedTests.reduce((acc, t) => acc + ((t.score || 0) / (t.maxScore || 100) * 100), 0) / (completedTests.length || 1);
+    return { total, completed, upcoming, avgScore };
+  };
+
+  const getNoteStats = () => {
+    const total = noteHistory.length;
+    const verified = noteHistory.filter(n => n.verified).length;
+    const completed = noteHistory.filter(n => n.isCompleted).length;
+    const pending = noteHistory.filter(n => !n.isCompleted).length;
+    return { total, verified, completed, pending };
+  };
+
   const hwStats = getHomeworkStats();
   const testStats = getTestStats();
   const noteStats = getNoteStats();

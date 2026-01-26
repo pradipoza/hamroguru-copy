@@ -1,7 +1,7 @@
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { useSubjectByCode } from '@/hooks/useSubjects';
+import { mockSubjects } from '@/lib/demoMockData';
 import { AITutorTab } from '@/components/subject/AITutorTab';
 import { HomeworkTab } from '@/components/subject/HomeworkTab';
 import { NotesTab } from '@/components/subject/NotesTab';
@@ -41,17 +41,7 @@ const tabs = [
 export default function SubjectPage() {
   const { subjectId } = useParams<{ subjectId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: subject, isLoading } = useSubjectByCode(subjectId || '');
-  
-  const currentTab = searchParams.get('tab') || 'tutor';
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const subject = mockSubjects.find(s => s.id === subjectId);
 
   if (!subject) {
     return (
@@ -68,6 +58,9 @@ export default function SubjectPage() {
       </div>
     );
   }
+
+  const isLoading = false;
+  const currentTab = searchParams.get('tab') || 'tutor';
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });

@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, Clock, FileText, BookOpen, ClipboardCheck, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
-import { useSubjects } from '@/hooks/useSubjects';
-import { usePendingTasks } from '@/hooks/useStudentData';
+import { mockPendingTasks, mockStudentProfile, mockSubjects } from '@/lib/demoMockData';
 import { SubjectCard } from '@/components/dashboard/SubjectCard';
 import { Card } from '@/components/ui/card';
 
@@ -38,9 +36,11 @@ function formatDueDate(date: Date, isOverdue: boolean): string {
 }
 
 export default function Dashboard() {
-  const { profile } = useAuth();
-  const { data: subjects, isLoading: subjectsLoading } = useSubjects();
-  const { data: pendingTasks, isLoading: tasksLoading } = usePendingTasks();
+  const profile = mockStudentProfile;
+  const subjects = mockSubjects;
+  const subjectsLoading = false;
+  const pendingTasks = mockPendingTasks;
+  const tasksLoading = false;
 
   const displayTasks = pendingTasks?.slice(0, 4) || [];
   const remainingTasks = (pendingTasks?.length || 0) - 4;
@@ -80,8 +80,8 @@ export default function Dashboard() {
                 subject={{
                   id: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
                   name: subject.name,
-                  nameNepali: subject.name_nepali || '',
-                  teacher: '',
+                  nameNepali: subject.nameNepali || '',
+                  teacher: subject.teacher,
                   icon: subject.icon,
                   color: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
                   pendingHomework: subject.pendingHomework,

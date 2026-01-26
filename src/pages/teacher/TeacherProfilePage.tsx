@@ -28,26 +28,58 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import {
-  teacherProfile,
+  mockTeacherProfile as teacherProfile,
   dailyDoseHistory,
   assessmentHistory,
   queryAddressHistory,
   lessonPlanHistory,
-  portfolioMetrics,
-  getDailyDoseStats,
-  getAssessmentStats,
-  getQueryStats,
-  getLessonPlanStats,
-  getPortfolioIssues,
-} from '@/lib/teacherProfileData';
+  mockPortfolioMetrics as portfolioMetrics,
+  mockPortfolioIssues as portfolioIssues,
+} from '@/lib/demoMockData';
 
 const TeacherProfilePage = () => {
   const [activeTab, setActiveTab] = useState('overview');
+
+  const getDailyDoseStats = () => {
+    const total = dailyDoseHistory.length;
+    const completed = dailyDoseHistory.filter(d => d.status === 'completed').length;
+    const pending = dailyDoseHistory.filter(d => d.status === 'pending').length;
+    const skipped = dailyDoseHistory.filter(d => d.status === 'skipped').length;
+    const completionRate = total > 0 ? (completed / total) * 100 : 0;
+    return { total, completed, pending, skipped, completionRate };
+  };
+
+  const getAssessmentStats = () => {
+    const total = assessmentHistory.length;
+    const completed = assessmentHistory.filter(a => a.status === 'completed').length;
+    const missed = assessmentHistory.filter(a => a.status === 'missed').length;
+    const upcoming = assessmentHistory.filter(a => a.status === 'upcoming' || a.status === 'available').length;
+    const completedAssessments = assessmentHistory.filter(a => a.status === 'completed' && a.score !== undefined);
+    const avgScore = completedAssessments.reduce((acc, a) => acc + (a.score || 0), 0) / (completedAssessments.length || 1);
+    return { total, completed, missed, upcoming, avgScore };
+  };
+
+  const getQueryStats = () => {
+    const total = queryAddressHistory.length;
+    const addressed = queryAddressHistory.filter(q => q.status === 'addressed').length;
+    const notAddressed = queryAddressHistory.filter(q => q.status === 'not_addressed').length;
+    const pending = queryAddressHistory.filter(q => q.status === 'pending').length;
+    const stillConfused = queryAddressHistory.filter(q => q.studentFeedback === 'still_confused').length;
+    return { total, addressed, notAddressed, pending, stillConfused };
+  };
+
+  const getLessonPlanStats = () => {
+    const total = lessonPlanHistory.length;
+    const completed = lessonPlanHistory.filter(lp => lp.status === 'completed').length;
+    const completedPlans = lessonPlanHistory.filter(lp => lp.status === 'completed' && lp.feedbackScore !== null);
+    const avgFeedback = completedPlans.reduce((acc, lp) => acc + (lp.feedbackScore || 0), 0) / (completedPlans.length || 1);
+    return { total, completed, avgFeedback };
+  };
+
   const doseStats = getDailyDoseStats();
   const assessmentStats = getAssessmentStats();
   const queryStats = getQueryStats();
   const lessonStats = getLessonPlanStats();
-  const portfolioIssues = getPortfolioIssues();
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {

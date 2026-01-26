@@ -13,32 +13,25 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '@/hooks/useAuth';
-import { 
-  useTeacherClasses, 
-  useTeacherSubmissions, 
-  useTeacherAssignments,
-  useTeacherProfile 
-} from '@/hooks/useTeacherData';
+import {
+  mockTeacherProfile,
+  mockTeacherClasses,
+  mockRecentSubmissions,
+  mockAssignments,
+  mockTeacherStats,
+} from '@/lib/demoMockData';
 
 export default function TeacherDashboard() {
-  const { profile } = useAuth();
-  const { data: teacherProfile } = useTeacherProfile();
-  const { data: classes, isLoading: classesLoading } = useTeacherClasses();
-  const { data: submissions, isLoading: submissionsLoading } = useTeacherSubmissions('pending_review');
-  const { data: assignments, isLoading: assignmentsLoading } = useTeacherAssignments();
-
-  const isLoading = classesLoading || submissionsLoading || assignmentsLoading;
-
-  const totalStudents = classes?.reduce((sum, c) => sum + c.studentCount, 0) || 0;
-  const totalPending = classes?.reduce((sum, c) => sum + c.pendingSubmissions, 0) || 0;
-  const avgScore = classes && classes.length > 0
-    ? Math.round(classes.reduce((sum, c) => sum + c.averageScore, 0) / classes.length)
-    : 0;
+  const isLoading = false;
+  const profile = mockTeacherProfile;
+  const classes = mockTeacherClasses;
+  const submissions = mockRecentSubmissions;
+  const assignments = mockAssignments;
+  const { totalStudents, pendingReviews: totalPending, classAverage: avgScore, activeClasses } = mockTeacherStats;
 
   const upcomingDeadlines = (assignments || [])
-    .filter(a => a.dueDate > new Date())
-    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())
+    .filter(a => new Date(a.dueDate) > new Date())
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 3);
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Teacher';

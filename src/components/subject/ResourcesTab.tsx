@@ -1,5 +1,5 @@
 import { Subject } from '@/lib/types';
-import { useResourcesBySubject } from '@/hooks/useStudentData';
+import { mockMathResources } from '@/lib/demoMockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -58,7 +58,9 @@ function ResourceCard({ resource }: { resource: any }) {
 }
 
 export function ResourcesTab({ subject }: ResourcesTabProps) {
-  const { data: resources, isLoading } = useResourcesBySubject(subject.id);
+  // For the demo, we'll show math resources for any subject.
+  const resources = mockMathResources;
+  const isLoading = false;
 
   if (isLoading) {
     return (

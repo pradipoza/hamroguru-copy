@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Subject, ChatMessage } from '@/lib/types';
-import { sampleChatHistory } from '@/lib/mockData';
+import { mockMathChatHistory } from '@/lib/demoMockData';
 import { Send, ImagePlus, Bot, User } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 
 interface AITutorTabProps {
@@ -20,16 +21,7 @@ const mockResponses = [
 ];
 
 export function AITutorTab({ subject }: AITutorTabProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(
-    sampleChatHistory[subject.id] || [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content: `नमस्ते! I'm your ${subject.name} tutor. I'm here to help you understand concepts deeply, not just solve problems. Ask me anything about ${subject.name}! 📚`,
-        timestamp: new Date(),
-      },
-    ]
-  );
+  const [messages, setMessages] = useState<ChatMessage[]>(mockMathChatHistory);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -106,13 +98,15 @@ export function AITutorTab({ subject }: AITutorTabProps) {
                 </div>
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-2xl px-4 py-2',
+                    'max-w-[80%] rounded-lg px-4 py-3',
                     message.role === 'assistant'
-                      ? 'bg-secondary text-secondary-foreground'
+                      ? 'bg-muted'
                       : 'bg-primary text-primary-foreground'
                   )}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <div className="prose prose-sm max-w-none">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
             ))}
