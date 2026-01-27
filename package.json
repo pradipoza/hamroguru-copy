@@ -4,13 +4,12 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"vite\"",
-    "dev:server": "tsx src/server/index.ts",
+    "dev": "tsx server/index.ts",
     "build": "vite build",
+    "start": "NODE_ENV=production tsx server/index.ts",
     "lint": "eslint .",
-    "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "ts-node-dev src/server/db/migrate.ts",
+    "db:migrate": "tsx server/db/migrate.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
