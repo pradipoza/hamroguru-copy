@@ -4,6 +4,7 @@ import { verifyToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
+router.get('/', verifyToken, subjectController.getAllSubjects);
 router.get('/:subjectCode', verifyToken, subjectController.getSubject);
 router.get('/:subjectCode/homework', verifyToken, subjectController.getHomework);
 router.get('/:subjectCode/notes', verifyToken, subjectController.getNotes);

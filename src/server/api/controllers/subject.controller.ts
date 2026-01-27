@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import * as subjectService from '../services/subject.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
+export const getAllSubjects = async (req: Request, res: Response) => {
+  try {
+    const subjects = await subjectService.getAllSubjects();
+    res.json(subjects);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching subjects', error });
+  }
+};
+
 export const getSubject = async (req: Request, res: Response) => {
   try {
     const subject = await subjectService.getSubjectByCode(req.params.subjectCode);

@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode'; // You might need to install jwt-decode: npm install jwt-decode
-
-const API_URL = 'http://localhost:3001/api';
+import api from '@/lib/api';
+import { jwtDecode } from 'jwt-decode';
 
 type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -42,10 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       if (token) {
         try {
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           const decoded: { id: string; role: UserRole } = jwtDecode(token);
-          // In a real app, you would fetch user profile here
-          setUser({ id: decoded.id, email: '' }); // Placeholder email
+          setUser({ id: decoded.id, email: '' });
           setRole(decoded.role);
         } catch (error) {
           console.error('Invalid token:', error);
@@ -58,25 +54,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const signIn = async (credentials: any) => {
-    const response = await axios.post(`${API_URL}/auth/signin`, credentials);
+    const response = await api.post('/auth/signin', credentials);
     const { token, user: userData, profile: profileData, role: userRole } = response.data;
     localStorage.setItem('token', token);
     setToken(token);
     setUser(userData);
     setProfile(profileData);
     setRole(userRole);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   };
 
   const signUp = async (userData: any) => {
-    const response = await axios.post(`${API_URL}/auth/signup`, userData);
+    const response = await api.post('/auth/signup', userData);
     const { token, user: newUser, profile: newProfile, role: newRole } = response.data;
     localStorage.setItem('token', token);
     setToken(token);
     setUser(newUser);
     setProfile(newProfile);
     setRole(newRole);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   };
 
   const signOut = () => {
@@ -85,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setRole(null);
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   return (

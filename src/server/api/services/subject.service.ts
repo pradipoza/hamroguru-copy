@@ -1,6 +1,11 @@
 import { db } from '../../db';
 import { subjects, homeworkAssignments, homeworkSubmissions, studentNotes, tests, testResults, resources, aiTutorSessions } from '../../db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, asc } from 'drizzle-orm';
+
+export const getAllSubjects = async () => {
+  const subjectsData = await db.select().from(subjects).orderBy(asc(subjects.name));
+  return subjectsData;
+};
 
 export const getSubjectByCode = async (subjectCode: string) => {
   const [subjectData] = await db.select().from(subjects).where(eq(subjects.code, subjectCode));
