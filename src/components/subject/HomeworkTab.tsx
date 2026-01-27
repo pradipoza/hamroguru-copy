@@ -1,5 +1,6 @@
 import { Subject } from '@/lib/types';
-import { mockMathHomework } from '@/lib/demoMockData';
+import { useQuery } from '@tanstack/react-query';
+import { getHomeworkForSubject } from '@/services/subject.api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,8 @@ const statusConfig = {
 function HomeworkCard({ homework }: { homework: any }) {
   const config = statusConfig[homework.status as keyof typeof statusConfig] || statusConfig.pending;
   const Icon = config.icon;
-  const isOverdue = homework.status === 'pending' && new Date(homework.dueDate) < new Date();
+  const dueDate = new Date(homework.dueDate);
+  const isOverdue = homework.status === 'pending' && dueDate < new Date();
 
   return (
     <Card>
@@ -49,10 +51,10 @@ function HomeworkCard({ homework }: { homework: any }) {
           <div className="text-xs text-muted-foreground">
             {isOverdue ? (
               <span className="text-destructive font-medium">
-                Overdue by {formatDistanceToNow(new Date(homework.dueDate))}
+                Overdue by {formatDistanceToNow(dueDate)}
               </span>
             ) : (
-              <span>Due {format(new Date(homework.dueDate), 'MMM d, yyyy')}</span>
+              <span>Due {format(dueDate, 'MMM d, yyyy')}</span>
             )}
           </div>
           {homework.status === 'pending' && (
@@ -60,7 +62,7 @@ function HomeworkCard({ homework }: { homework: any }) {
               Submit
             </Button>
           )}
-          {homework.score !== undefined && (
+          {homework.score !== null && typeof homework.score !== 'undefined' && (
             <Badge variant="secondary">{homework.score} marks</Badge>
           )}
         </div>
@@ -70,9 +72,10 @@ function HomeworkCard({ homework }: { homework: any }) {
 }
 
 export function HomeworkTab({ subject }: HomeworkTabProps) {
-  // For the demo, we'll show math homework for any subject.
-  const homework = mockMathHomework;
-  const isLoading = false;
+  const { data: homework, isLoading, isError } = useQuery({
+    queryKey: ['homework', subject.id],
+    queryFn: () => getHomeworkForSubject(subject.id),
+  });
 
   if (isLoading) {
     return (
@@ -82,10 +85,19 @@ export function HomeworkTab({ subject }: HomeworkTabProps) {
     );
   }
 
-  const pending = homework?.filter(hw => hw.status === 'pending') || [];
-  const completed = homework?.filter(hw => hw.status !== 'pending') || [];
+  if (isError || !homework) {
+    return (
+      <Card className="p-8 text-center">
+        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-destructive" />
+        <p className="text-muted-foreground">Could not load homework assignments.</p>
+      </Card>
+    );
+  }
 
-  if (!homework || homework.length === 0) {
+  const pending = homework.filter((hw: any) => hw.status === 'pending');
+  const completed = homework.filter((hw: any) => hw.status !== 'pending');
+
+  if (homework.length === 0) {
     return (
       <Card className="p-8 text-center">
         <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
@@ -102,7 +114,7 @@ export function HomeworkTab({ subject }: HomeworkTabProps) {
             Pending ({pending.length})
           </h3>
           <div className="space-y-3">
-            {pending.map((hw) => (
+            {pending.map((hw: any) => (
               <HomeworkCard key={hw.id} homework={hw} />
             ))}
           </div>
@@ -115,7 +127,7 @@ export function HomeworkTab({ subject }: HomeworkTabProps) {
             Completed ({completed.length})
           </h3>
           <div className="space-y-3">
-            {completed.map((hw) => (
+            {completed.map((hw: any) => (
               <HomeworkCard key={hw.id} homework={hw} />
             ))}
           </div>

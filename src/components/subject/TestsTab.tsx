@@ -1,9 +1,10 @@
-import { Subject } from '@/lib/types';
-import { mockMathTests } from '@/lib/demoMockData';
+import { Subject, Test } from '@/lib/types';
+import { useQuery } from '@tanstack/react-query';
+import { getTestsForSubject } from '@/services/subject.api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ClipboardCheck, Clock, Calendar, Play, Loader2 } from 'lucide-react';
+import { ClipboardCheck, Clock, Calendar, Play, Loader2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface TestsTabProps {
@@ -16,7 +17,7 @@ const statusConfig = {
   completed: { label: 'Completed', variant: 'outline' as const },
 };
 
-function TestCard({ test }: { test: any }) {
+function TestCard({ test }: { test: Test }) {
   const config = statusConfig[test.status as keyof typeof statusConfig] || statusConfig.upcoming;
 
   return (
@@ -29,12 +30,12 @@ function TestCard({ test }: { test: any }) {
               <p className="text-xs text-muted-foreground mt-1">{test.chapter}</p>
             )}
             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
+              {test.duration && <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {test.duration} mins
-              </span>
-              <span>{test.totalQuestions} questions</span>
-              <span>{test.totalMarks} marks</span>
+              </span>}
+              {test.totalQuestions && <span>{test.totalQuestions} questions</span>}
+              {test.totalMarks && <span>{test.totalMarks} marks</span>}
             </div>
           </div>
           <Badge variant={config.variant}>{config.label}</Badge>
@@ -53,7 +54,7 @@ function TestCard({ test }: { test: any }) {
               Start Test
             </Button>
           )}
-          {test.status === 'completed' && test.score !== undefined && (
+          {test.status === 'completed' && test.score !== null && (
             <Badge variant="secondary" className="text-base px-3">
               {test.score}/{test.totalMarks}
             </Badge>
@@ -65,9 +66,10 @@ function TestCard({ test }: { test: any }) {
 }
 
 export function TestsTab({ subject }: TestsTabProps) {
-  // For the demo, we'll show math tests for any subject.
-  const tests = mockMathTests;
-  const isLoading = false;
+  const { data: tests, isLoading, isError } = useQuery<Test[]>({ 
+    queryKey: ['tests', subject.id],
+    queryFn: () => getTestsForSubject(subject.id),
+  });
 
   if (isLoading) {
     return (
@@ -77,7 +79,16 @@ export function TestsTab({ subject }: TestsTabProps) {
     );
   }
 
-  if (!tests || tests.length === 0) {
+  if (isError || !tests) {
+    return (
+      <Card className="p-8 text-center">
+        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-destructive" />
+        <p className="text-muted-foreground">Could not load tests.</p>
+      </Card>
+    );
+  }
+
+  if (tests.length === 0) {
     return (
       <Card className="p-8 text-center">
         <ClipboardCheck className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />

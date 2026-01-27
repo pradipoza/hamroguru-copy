@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, Clock, FileText, BookOpen, ClipboardCheck, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockPendingTasks, mockStudentProfile, mockSubjects } from '@/lib/demoMockData';
+import { useQuery } from '@tanstack/react-query';
+import { getDashboardData } from '@/services/student.api';
 import { SubjectCard } from '@/components/dashboard/SubjectCard';
 import { Card } from '@/components/ui/card';
 
-const taskIcons = {
+const taskIcons: { [key: string]: React.ElementType } = {
   homework: FileText,
   notes: BookOpen,
   test: ClipboardCheck,
@@ -36,16 +37,17 @@ function formatDueDate(date: Date, isOverdue: boolean): string {
 }
 
 export default function Dashboard() {
-  const profile = mockStudentProfile;
-  const subjects = mockSubjects;
-  const subjectsLoading = false;
-  const pendingTasks = mockPendingTasks;
-  const tasksLoading = false;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: getDashboardData,
+  });
+
+  const { profile, subjects, pendingTasks } = data || {};
 
   const displayTasks = pendingTasks?.slice(0, 4) || [];
   const remainingTasks = (pendingTasks?.length || 0) - 4;
 
-  const firstName = profile?.full_name?.split(' ')[0] || 'Student';
+  const firstName = profile?.fullName?.split(' ')[0] || 'Student';
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -55,8 +57,10 @@ export default function Dashboard() {
           Welcome back, {firstName}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {tasksLoading ? (
-            'Loading tasks...'
+          {isLoading ? (
+            'Loading your dashboard...'
+          ) : isError ? (
+            'Could not load your tasks.'
           ) : pendingTasks && pendingTasks.length > 0 ? (
             `You have ${pendingTasks.length} pending task${pendingTasks.length > 1 ? 's' : ''}`
           ) : (
@@ -68,25 +72,30 @@ export default function Dashboard() {
       {/* Subject Cards */}
       <section className="mb-8">
         <h2 className="text-sm font-medium text-muted-foreground mb-4">Your Classes</h2>
-        {subjectsLoading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
+        ) : isError ? (
+          <Card className="p-8 text-center">
+            <p className="text-destructive">Failed to load subjects.</p>
+          </Card>
         ) : subjects && subjects.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subjects.map((subject) => (
+            {subjects.map((subject: any) => (
               <SubjectCard 
                 key={subject.id} 
                 subject={{
                   id: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
                   name: subject.name,
                   nameNepali: subject.nameNepali || '',
-                  teacher: subject.teacher,
+                  teacher: 'N/A', // This needs to be fetched
                   icon: subject.icon,
                   color: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
-                  pendingHomework: subject.pendingHomework,
-                  pendingNotes: subject.pendingNotes,
-                  upcomingTests: subject.upcomingTests,
+                  // These counts need to be calculated or fetched
+                  pendingHomework: 0,
+                  pendingNotes: 0,
+                  upcomingTests: 0,
                 }} 
               />
             ))}
@@ -99,7 +108,7 @@ export default function Dashboard() {
       </section>
 
       {/* Pending Tasks Preview */}
-      {!tasksLoading && pendingTasks && pendingTasks.length > 0 && (
+      {!isLoading && !isError && pendingTasks && pendingTasks.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -117,20 +126,25 @@ export default function Dashboard() {
             )}
           </div>
           <div className="space-y-2">
-            {displayTasks.map((task) => {
-              const Icon = taskIcons[task.type];
-              const colorClass = subjectColors[task.subjectCode] || 'bg-primary';
+            {displayTasks.map((task: any) => {
+              // Assuming all tasks are homework for now
+              const Icon = taskIcons['homework'];
+              const subject = subjects.find((s: any) => s.name === task.subject);
+              const subjectCode = subject?.code || 'general';
+              const colorClass = subjectColors[subjectCode] || 'bg-primary';
+              const dueDate = new Date(task.dueDate);
+              const isOverdue = dueDate < new Date();
 
               return (
                 <Link
                   key={task.id}
-                  to={`/subject/${task.subjectCode}?tab=${task.type === 'test' ? 'tests' : task.type}`}
+                  to={`/subject/${subjectCode}?tab=homework`}
                   className="block"
                 >
                   <div
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors hover:bg-accent/50',
-                      task.isOverdue && 'border-destructive/30'
+                      isOverdue && 'border-destructive/30'
                     )}
                   >
                     <div className={cn(
@@ -141,13 +155,13 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
-                      <p className="text-xs text-muted-foreground">{task.subjectName}</p>
+                      <p className="text-xs text-muted-foreground">{task.subject}</p>
                     </div>
                     <span className={cn(
                       'text-xs whitespace-nowrap',
-                      task.isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
+                      isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
                     )}>
-                      {formatDueDate(task.dueDate, task.isOverdue)}
+                      {formatDueDate(dueDate, isOverdue)}
                     </span>
                   </div>
                 </Link>

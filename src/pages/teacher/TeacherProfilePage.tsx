@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getProfileData } from '@/services/teacher.api';
 import { 
   User, 
   BookOpen, 
@@ -18,7 +20,8 @@ import {
   MessageSquare,
   Briefcase,
   GraduationCap,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,100 +30,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
-import {
-  mockTeacherProfile as teacherProfile,
-  dailyDoseHistory,
-  assessmentHistory,
-  queryAddressHistory,
-  lessonPlanHistory,
-  mockPortfolioMetrics as portfolioMetrics,
-  mockPortfolioIssues as portfolioIssues,
-} from '@/lib/demoMockData';
+import { TeacherProfile, ClassAssignment } from '@/lib/types';
 
 const TeacherProfilePage = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  const getDailyDoseStats = () => {
-    const total = dailyDoseHistory.length;
-    const completed = dailyDoseHistory.filter(d => d.status === 'completed').length;
-    const pending = dailyDoseHistory.filter(d => d.status === 'pending').length;
-    const skipped = dailyDoseHistory.filter(d => d.status === 'skipped').length;
-    const completionRate = total > 0 ? (completed / total) * 100 : 0;
-    return { total, completed, pending, skipped, completionRate };
-  };
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['teacherProfile'],
+    queryFn: getProfileData,
+  });
 
-  const getAssessmentStats = () => {
-    const total = assessmentHistory.length;
-    const completed = assessmentHistory.filter(a => a.status === 'completed').length;
-    const missed = assessmentHistory.filter(a => a.status === 'missed').length;
-    const upcoming = assessmentHistory.filter(a => a.status === 'upcoming' || a.status === 'available').length;
-    const completedAssessments = assessmentHistory.filter(a => a.status === 'completed' && a.score !== undefined);
-    const avgScore = completedAssessments.reduce((acc, a) => acc + (a.score || 0), 0) / (completedAssessments.length || 1);
-    return { total, completed, missed, upcoming, avgScore };
-  };
+  const { profile: teacherProfile, assignments } = (data || {}) as { profile: TeacherProfile, assignments: ClassAssignment[] };
 
-  const getQueryStats = () => {
-    const total = queryAddressHistory.length;
-    const addressed = queryAddressHistory.filter(q => q.status === 'addressed').length;
-    const notAddressed = queryAddressHistory.filter(q => q.status === 'not_addressed').length;
-    const pending = queryAddressHistory.filter(q => q.status === 'pending').length;
-    const stillConfused = queryAddressHistory.filter(q => q.studentFeedback === 'still_confused').length;
-    return { total, addressed, notAddressed, pending, stillConfused };
-  };
-
-  const getLessonPlanStats = () => {
-    const total = lessonPlanHistory.length;
-    const completed = lessonPlanHistory.filter(lp => lp.status === 'completed').length;
-    const completedPlans = lessonPlanHistory.filter(lp => lp.status === 'completed' && lp.feedbackScore !== null);
-    const avgFeedback = completedPlans.reduce((acc, lp) => acc + (lp.feedbackScore || 0), 0) / (completedPlans.length || 1);
-    return { total, completed, avgFeedback };
-  };
-
-  const doseStats = getDailyDoseStats();
-  const assessmentStats = getAssessmentStats();
-  const queryStats = getQueryStats();
-  const lessonStats = getLessonPlanStats();
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
-      completed: { variant: 'default', icon: <CheckCircle2 className="w-3 h-3" /> },
-      addressed: { variant: 'default', icon: <CheckCircle2 className="w-3 h-3" /> },
-      pending: { variant: 'outline', icon: <Clock className="w-3 h-3" /> },
-      skipped: { variant: 'secondary', icon: <XCircle className="w-3 h-3" /> },
-      missed: { variant: 'destructive', icon: <XCircle className="w-3 h-3" /> },
-      partial: { variant: 'secondary', icon: <AlertCircle className="w-3 h-3" /> },
-      not_addressed: { variant: 'destructive', icon: <AlertTriangle className="w-3 h-3" /> },
-      upcoming: { variant: 'secondary', icon: <Calendar className="w-3 h-3" /> },
-    };
-    const config = variants[status] || { variant: 'outline', icon: null };
+  if (isLoading) {
     return (
-      <Badge variant={config.variant} className="gap-1">
-        {config.icon}
-        {status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1)}
-      </Badge>
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
     );
-  };
+  }
 
-  const getTrendIcon = (trend: string) => {
-    if (trend === 'up') return <TrendingUp className="w-4 h-4 text-green-500" />;
-    if (trend === 'down') return <TrendingDown className="w-4 h-4 text-red-500" />;
-    return <Minus className="w-4 h-4 text-muted-foreground" />;
-  };
-
-  const getPerformanceBadge = (level?: string) => {
-    if (!level) return null;
-    const colors: Record<string, string> = {
-      excellent: 'bg-green-100 text-green-700 border-green-200',
-      good: 'bg-blue-100 text-blue-700 border-blue-200',
-      satisfactory: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      needs_improvement: 'bg-red-100 text-red-700 border-red-200',
-    };
+  if (isError || !teacherProfile) {
     return (
-      <Badge variant="outline" className={colors[level]}>
-        {level.replace('_', ' ')}
-      </Badge>
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-3 text-destructive" />
+          <p className="text-muted-foreground">Could not load teacher profile.</p>
+        </div>
+      </div>
     );
-  };
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -130,33 +69,34 @@ const TeacherProfilePage = () => {
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <Avatar className="w-20 h-20">
               <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                {teacherProfile.name.split(' ').map(n => n[0]).join('')}
+                {teacherProfile.fullName?.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold">{teacherProfile.name}</h1>
-                <Badge variant="secondary">{teacherProfile.employeeId}</Badge>
+                <h1 className="text-2xl font-bold">{teacherProfile.fullName}</h1>
               </div>
               <p className="text-muted-foreground">
-                {teacherProfile.qualification} • {teacherProfile.experience} years experience
+                {teacherProfile.qualification} • {teacherProfile.yearsExperience} years experience
               </p>
-              <p className="text-muted-foreground">{teacherProfile.school}</p>
-              <div className="flex gap-4 text-sm text-muted-foreground flex-wrap">
-                <span>{teacherProfile.email}</span>
-                <span>{teacherProfile.phone}</span>
+              <div className="flex flex-wrap gap-1 mt-2">
+                <span className="text-sm font-medium mr-2">Subjects:</span>
+                {teacherProfile.subjectsTaught?.map((spec, i) => (
+                  <Badge key={i} variant="outline">{spec}</Badge>
+                ))}
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
-                {teacherProfile.specializations.map((spec, i) => (
-                  <Badge key={i} variant="outline">{spec}</Badge>
+                <span className="text-sm font-medium mr-2">Classes:</span>
+                {assignments?.map((a, i) => (
+                  <Badge key={i} variant="secondary">{`Grade ${a.class.grade}${a.class.section} - ${a.subject.name}`}</Badge>
                 ))}
               </div>
             </div>
 
             <div className="flex gap-3">
               <div className="text-center p-3 bg-muted rounded-lg">
-                <div className="text-2xl font-bold text-primary">{doseStats.completionRate.toFixed(0)}%</div>
+                <div className="text-2xl font-bold text-primary">{teacherProfile.doseStats.completionRate.toFixed(0)}%</div>
                 <div className="text-xs text-muted-foreground">Dose Rate</div>
               </div>
               <div className="text-center p-3 bg-muted rounded-lg">

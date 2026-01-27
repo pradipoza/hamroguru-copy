@@ -1,7 +1,8 @@
 import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getSubjectByCode } from '@/services/subject.api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { mockSubjects } from '@/lib/demoMockData';
 import { AITutorTab } from '@/components/subject/AITutorTab';
 import { HomeworkTab } from '@/components/subject/HomeworkTab';
 import { NotesTab } from '@/components/subject/NotesTab';
@@ -41,9 +42,22 @@ const tabs = [
 export default function SubjectPage() {
   const { subjectId } = useParams<{ subjectId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const subject = mockSubjects.find(s => s.id === subjectId);
 
-  if (!subject) {
+  const { data: subject, isLoading, isError } = useQuery({
+    queryKey: ['subject', subjectId],
+    queryFn: () => getSubjectByCode(subjectId!),
+    enabled: !!subjectId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError || !subject) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -58,8 +72,6 @@ export default function SubjectPage() {
       </div>
     );
   }
-
-  const isLoading = false;
   const currentTab = searchParams.get('tab') || 'tutor';
 
   const handleTabChange = (value: string) => {

@@ -1,23 +1,24 @@
-import { Subject } from '@/lib/types';
-import { mockMathResources } from '@/lib/demoMockData';
+import { Subject, Resource } from '@/lib/types';
+import { useQuery } from '@tanstack/react-query';
+import { getResourcesForSubject } from '@/services/subject.api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Video, FileText, BookOpen, Target, ExternalLink, Bookmark, Loader2, Library } from 'lucide-react';
+import { Video, FileText, BookOpen, Target, ExternalLink, Bookmark, Loader2, Library, AlertCircle } from 'lucide-react';
 
 interface ResourcesTabProps {
   subject: Subject;
 }
 
-const typeConfig = {
+const typeConfig: { [key: string]: { icon: React.ElementType; label: string; color: string } } = {
   video: { icon: Video, label: 'Video', color: 'text-red-500' },
   pdf: { icon: FileText, label: 'PDF', color: 'text-blue-500' },
   notes: { icon: BookOpen, label: 'Notes', color: 'text-green-500' },
   practice: { icon: Target, label: 'Practice', color: 'text-purple-500' },
 };
 
-function ResourceCard({ resource }: { resource: any }) {
-  const config = typeConfig[resource.type as keyof typeof typeConfig] || typeConfig.notes;
+function ResourceCard({ resource }: { resource: Resource }) {
+  const config = typeConfig[resource.type] || typeConfig.notes;
   const Icon = config.icon;
 
   return (
@@ -44,12 +45,12 @@ function ResourceCard({ resource }: { resource: any }) {
             {resource.isBookmarked && (
               <Bookmark className="w-4 h-4 text-yellow-500 fill-yellow-500" />
             )}
-            <Button size="sm" variant="outline" className="gap-1" asChild>
+            {resource.url && <Button size="sm" variant="outline" className="gap-1" asChild>
               <a href={resource.url} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="w-3 h-3" />
                 Open
               </a>
-            </Button>
+            </Button>}
           </div>
         </div>
       </CardContent>
@@ -58,9 +59,10 @@ function ResourceCard({ resource }: { resource: any }) {
 }
 
 export function ResourcesTab({ subject }: ResourcesTabProps) {
-  // For the demo, we'll show math resources for any subject.
-  const resources = mockMathResources;
-  const isLoading = false;
+  const { data: resources, isLoading, isError } = useQuery<Resource[]>({ 
+    queryKey: ['resources', subject.id],
+    queryFn: () => getResourcesForSubject(subject.id),
+  });
 
   if (isLoading) {
     return (
@@ -70,7 +72,16 @@ export function ResourcesTab({ subject }: ResourcesTabProps) {
     );
   }
 
-  if (!resources || resources.length === 0) {
+  if (isError || !resources) {
+    return (
+      <Card className="p-8 text-center">
+        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-destructive" />
+        <p className="text-muted-foreground">Could not load resources.</p>
+      </Card>
+    );
+  }
+
+  if (resources.length === 0) {
     return (
       <Card className="p-8 text-center">
         <Library className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />

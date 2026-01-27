@@ -32,24 +32,22 @@ export default function AuthPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    const { error } = await signIn(loginEmail, loginPassword);
-
-    if (error) {
-      toast({
-        title: 'Login Failed',
-        description: error.message || 'Please check your credentials and try again.',
-        variant: 'destructive',
-      });
-    } else {
+    try {
+      await signIn({ email: loginEmail, password: loginPassword });
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
       });
       navigate('/');
+    } catch (error: any) {
+      toast({
+        title: 'Login Failed',
+        description: error.response?.data?.message || 'Please check your credentials and try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -66,22 +64,27 @@ export default function AuthPage() {
       return;
     }
 
-    const { error } = await signUp(signUpEmail, signUpPassword, signUpName, signUpRole);
-
-    if (error) {
-      toast({
-        title: 'Sign Up Failed',
-        description: error.message || 'An error occurred during registration.',
-        variant: 'destructive',
+    try {
+      await signUp({
+        email: signUpEmail,
+        password: signUpPassword,
+        fullName: signUpName,
+        role: signUpRole,
       });
-    } else {
       toast({
         title: 'Account created!',
-        description: 'Please check your email to confirm your account.',
+        description: 'You have successfully signed up.',
       });
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: 'Sign Up Failed',
+        description: error.response?.data?.message || 'An error occurred during registration.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (

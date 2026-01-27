@@ -1,19 +1,21 @@
-import { Subject } from '@/lib/types';
-import { mockMathNotes } from '@/lib/demoMockData';
+import { Subject, Note } from '@/lib/types';
+import { useQuery } from '@tanstack/react-query';
+import { getNotesForSubject } from '@/services/subject.api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, CheckCircle2, Upload, Loader2 } from 'lucide-react';
+import { BookOpen, CheckCircle2, Upload, Loader2, AlertCircle } from 'lucide-react';
 
 interface NotesTabProps {
   subject: Subject;
 }
 
 export function NotesTab({ subject }: NotesTabProps) {
-  // For the demo, we'll show math notes for any subject.
-  const notes = mockMathNotes;
-  const isLoading = false;
+  const { data: notes, isLoading, isError } = useQuery<Note[]>({ // Provide the type here
+    queryKey: ['notes', subject.id],
+    queryFn: () => getNotesForSubject(subject.id),
+  });
 
   if (isLoading) {
     return (
@@ -23,7 +25,16 @@ export function NotesTab({ subject }: NotesTabProps) {
     );
   }
 
-  if (!notes || notes.length === 0) {
+  if (isError || !notes) {
+    return (
+      <Card className="p-8 text-center">
+        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-destructive" />
+        <p className="text-muted-foreground">Could not load notes.</p>
+      </Card>
+    );
+  }
+
+  if (notes.length === 0) {
     return (
       <Card className="p-8 text-center">
         <BookOpen className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
@@ -35,7 +46,7 @@ export function NotesTab({ subject }: NotesTabProps) {
     );
   }
 
-  const completed = notes.filter(n => n.isCompleted).length;
+  const completed = notes.filter(n => n.status === 'completed' || n.status === 'verified').length;
   const progress = (completed / notes.length) * 100;
 
   // Group notes by chapter
@@ -45,7 +56,7 @@ export function NotesTab({ subject }: NotesTabProps) {
     }
     acc[note.chapter].push(note);
     return acc;
-  }, {} as Record<string, typeof notes>);
+  }, {} as Record<string, Note[]>);
 
   return (
     <div className="space-y-6">
@@ -67,42 +78,46 @@ export function NotesTab({ subject }: NotesTabProps) {
         <div key={chapter}>
           <h3 className="font-medium text-sm text-muted-foreground mb-3">{chapter}</h3>
           <div className="space-y-2">
-            {chapterNotes.map((note) => (
-              <Card key={note.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        note.isCompleted ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {note.isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4" />
-                        ) : (
-                          <BookOpen className="w-4 h-4" />
+            {chapterNotes.map((note) => {
+              const isCompleted = note.status === 'completed' || note.status === 'verified';
+              const isVerified = note.status === 'verified';
+              return (
+                <Card key={note.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          isCompleted ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-4 h-4" />
+                          ) : (
+                            <BookOpen className="w-4 h-4" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{note.topic}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isVerified && (
+                          <Badge variant="default" className="gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Verified
+                          </Badge>
+                        )}
+                        {!isCompleted && (
+                          <Button size="sm" variant="outline" className="gap-1">
+                            <Upload className="w-3 h-3" />
+                            Upload
+                          </Button>
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{note.topic}</p>
-                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {note.verified && (
-                        <Badge variant="default" className="gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Verified
-                        </Badge>
-                      )}
-                      {!note.isCompleted && (
-                        <Button size="sm" variant="outline" className="gap-1">
-                          <Upload className="w-3 h-3" />
-                          Upload
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       ))}
