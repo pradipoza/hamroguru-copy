@@ -6,11 +6,11 @@ import {
   ClipboardList, 
   TrendingUp, 
   Settings,
-  GraduationCap,
   BookOpen,
   User,
   LogOut
 } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -51,12 +51,10 @@ export function TeacherSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-            <GraduationCap className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="HamroGuru" className="w-9 h-9 rounded-lg flex-shrink-0 object-contain" />
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <h1 className="font-semibold text-base leading-tight">meroGuru</h1>
+              <h1 className="font-semibold text-base leading-tight">HamroGuru</h1>
               <p className="text-xs text-muted-foreground">Teacher Portal</p>
             </div>
           )}

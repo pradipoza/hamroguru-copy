@@ -6,10 +6,10 @@ import {
   MessageCircle, 
   TrendingUp, 
   Settings,
-  GraduationCap,
   User,
   LogOut
 } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -49,12 +49,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0 bg-card shadow-sm">
       <SidebarHeader className="p-4 pb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow-sm">
-            <GraduationCap className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="HamroGuru" className="w-10 h-10 rounded-xl flex-shrink-0 object-contain" />
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <h1 className="font-bold text-lg leading-tight text-foreground">meroGuru</h1>
+              <h1 className="font-bold text-lg leading-tight text-foreground">HamroGuru</h1>
               <p className="text-xs text-muted-foreground">Smart Learning</p>
             </div>
           )}

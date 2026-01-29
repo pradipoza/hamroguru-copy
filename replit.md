@@ -1,8 +1,8 @@
-# meroGuru - AI-Powered Education Platform
+# HamroGuru - AI-Powered Education Platform
 
 ## Overview
 
-meroGuru is an AI-driven personalized education platform designed for students and teachers in Nepal. The platform creates a closed learning loop where students receive personalized AI tutoring, automated homework generation and checking, and teachers get data-driven lesson plans based on student performance. The system aims to solve systemic issues in modern education including lack of personalization, weak feedback loops, and inconsistent assessment.
+HamroGuru is an AI-driven personalized education platform designed for students and teachers in Nepal. The platform creates a closed learning loop where students receive personalized AI tutoring, automated homework generation and checking, and teachers get data-driven lesson plans based on student performance. The system aims to solve systemic issues in modern education including lack of personalization, weak feedback loops, and inconsistent assessment.
 
 ## User Preferences
 

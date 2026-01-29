@@ -11,7 +11,7 @@ export function registerRoutes(app: Express) {
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", message: "MeroGuru Backend is running!" });
+    res.json({ status: "ok", message: "HamroGuru Backend is running!" });
   });
 
   app.use("/api/auth", authRoutes);
