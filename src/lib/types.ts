@@ -111,4 +111,6 @@ export interface ClassAssignment {
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string | null;
+  timestamp?: string;
 }

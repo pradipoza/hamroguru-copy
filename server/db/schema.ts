@@ -309,6 +309,15 @@ export const teacherPortfolio = pgTable('teacher_portfolio', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// CHAT MEMORY TABLE (for AI Tutor)
+export const chatMemory = pgTable('chat_memory', {
+  id: integer('id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  message: jsonb('message').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  subject: text('subject'),
+});
+
 // UTILITY TABLES
 export const webhookLogs = pgTable('webhook_logs', {
   id: uuid('id').primaryKey().defaultRandom(),

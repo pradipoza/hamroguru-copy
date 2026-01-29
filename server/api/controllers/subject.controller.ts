@@ -93,11 +93,12 @@ export const getAiTutorSession = async (req: AuthenticatedRequest, res: Response
       return res.status(401).json({ message: 'Authentication error' });
     }
     const studentId = req.user.id;
-    const subject = await subjectService.getSubjectByCode(req.params.subjectCode);
+    const subjectCode = req.params.subjectCode;
+    const subject = await subjectService.getSubjectByCode(subjectCode);
     if (!subject) {
       return res.status(404).json({ message: 'Subject not found' });
     }
-    const session = await subjectService.getAiTutorSession(subject.id, studentId);
+    const session = await subjectService.getAiTutorSession(subjectCode, studentId);
     res.json(session);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching AI tutor session', error });
@@ -109,11 +110,20 @@ export const postAiTutorMessage = async (req: AuthenticatedRequest, res: Respons
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication error' });
     }
-    const { sessionId, message } = req.body;
-    const updatedSession = await subjectService.addAiTutorMessage(sessionId, message);
+    const studentId = req.user.id;
+    const subjectCode = req.params.subjectCode;
+    const { message } = req.body;
+    
+    const subject = await subjectService.getSubjectByCode(subjectCode);
+    if (!subject) {
+      return res.status(404).json({ message: 'Subject not found' });
+    }
+    
+    const updatedSession = await subjectService.addAiTutorMessage(subjectCode, studentId, message);
     res.json(updatedSession);
-  } catch (error) {
-    res.status(500).json({ message: 'Error posting message to AI tutor', error });
+  } catch (error: any) {
+    console.error('Error posting AI tutor message:', error);
+    res.status(500).json({ message: 'Error posting message to AI tutor', error: error.message });
   }
 };
 

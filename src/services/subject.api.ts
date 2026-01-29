@@ -32,7 +32,18 @@ export const getAiTutorSession = async (subjectCode: string) => {
   return response.data;
 };
 
-export const postAiTutorMessage = async (subjectCode: string, sessionId: string, message: { role: 'user'; content: string }) => {
-  const response = await api.post(`${API_URL}/${subjectCode}/ai-tutor`, { sessionId, message });
+export const postAiTutorMessage = async (subjectCode: string, message: { role: 'user'; content: string; imageUrl?: string }) => {
+  const response = await api.post(`${API_URL}/${subjectCode}/ai-tutor`, { message });
+  return response.data;
+};
+
+export const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post('/upload/image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
