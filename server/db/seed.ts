@@ -24,6 +24,10 @@ import {
   dailyDoses,
   teacherAssessments,
   studentQueries,
+  aiTutorSessions,
+  teacherPortfolio,
+  webhookLogs,
+  subjectTextbookEmbeddings,
 } from './schema';
 import { DEFAULT_CLASS, DEFAULT_SCHOOL } from '../lib/config';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -59,6 +63,7 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9\s]/g, '')
     .trim()
     .replace(/\s+/g, '.');
+const makeVector = (length: number) => Array.from({ length }, () => Number((rng() * 2 - 1).toFixed(6)));
 
 const seedSubjects = async () => {
   const existingSubjects = await db.select().from(subjects);
@@ -223,7 +228,7 @@ const seedAcademicData = async () => {
     qualification: teacherSeed[index].qualification,
     subjectsTaught: [subjectByCode.get(teacherSeed[index].subjectCode)?.name || ''],
     yearsExperience: teacherSeed[index].yearsExperience,
-    joinDate: classStartDate,
+    joinDate: classStartDate.toISOString().split('T')[0], // Convert to date string YYYY-MM-DD
     createdAt: classStartDate,
     updatedAt: addDays(classStartDate, randInt(10, 50)),
   }));
@@ -554,6 +559,7 @@ const seedAcademicData = async () => {
       if (!subject) return;
       const status = tier === 'top' ? 'verified' : tier === 'mid' ? (rng() < 0.5 ? 'completed' : 'verified') : 'pending';
       const submittedAt = addDays(classStartDate, randInt(20, 45));
+      const verifiedBy = status === 'verified' ? teacherBySubject.get(code) || null : null;
       noteRows.push({
         studentId: student.id,
         subjectId: subject.id,
@@ -561,6 +567,7 @@ const seedAcademicData = async () => {
         topic: pick(['Key concepts', 'Examples', 'Exercises', 'Summary notes']),
         content: 'Summary notes prepared by student.',
         status,
+        verifiedBy,
         verifiedAt: status === 'verified' ? addDays(submittedAt, 1) : null,
         createdAt: submittedAt,
         updatedAt: addDays(submittedAt, randInt(1, 3)),
@@ -656,7 +663,7 @@ const seedAcademicData = async () => {
         teacherId: insertedTeachers[index].id,
         classId: schoolClass.id,
         subjectId: subject.id,
-        date: baseDate,
+        date: baseDate.toISOString().split('T')[0], // Convert to date string YYYY-MM-DD
         topics: pickMany(['Introduction', 'Practice set', 'Revision', 'Quiz discussion'], 2),
         studentQueries: [],
         weakAreas: pickMany(weaknessesBySubject[teacher.subjectCode] || [], 2),
@@ -671,7 +678,7 @@ const seedAcademicData = async () => {
         teacherId: insertedTeachers[index].id,
         classId: schoolClass.id,
         subjectId: subject.id,
-        date: addDays(now, 0),
+        date: addDays(now, 0).toISOString().split('T')[0], // Convert to date string YYYY-MM-DD
         topics: pickMany(['Concept review', 'Guided practice', 'Doubt clearing'], 2),
         studentQueries: [],
         weakAreas: pickMany(weaknessesBySubject[teacher.subjectCode] || [], 1),
@@ -684,7 +691,7 @@ const seedAcademicData = async () => {
         teacherId: insertedTeachers[index].id,
         classId: schoolClass.id,
         subjectId: subject.id,
-        date: addDays(now, 5),
+        date: addDays(now, 5).toISOString().split('T')[0], // Convert to date string YYYY-MM-DD
         topics: pickMany(['Practice drills', 'Assessment prep'], 2),
         studentQueries: [],
         weakAreas: pickMany(weaknessesBySubject[teacher.subjectCode] || [], 1),
@@ -703,6 +710,7 @@ const seedAcademicData = async () => {
   teacherSeed.forEach((teacher, index) => {
     const subject = subjectByCode.get(teacher.subjectCode);
     if (!subject) return;
+    const completed = rng() < 0.6;
     dailyDoseRows.push({
       teacherId: insertedTeachers[index].id,
       subjectId: subject.id,
@@ -713,8 +721,8 @@ const seedAcademicData = async () => {
       topics: pickMany(['engagement', 'concept check', 'revision'], 2),
       estimatedTime: randInt(10, 20),
       source: 'HamroGuru',
-      completed: rng() < 0.6,
-      completedAt: rng() < 0.6 ? addDays(now, -1) : null,
+      completed,
+      completedAt: completed ? addDays(now, -1) : null,
       createdAt: addDays(now, -5),
     });
   });
@@ -762,6 +770,7 @@ const seedAcademicData = async () => {
     const subject = subjectByCode.get(subjectCode);
     const teacherId = teacherBySubject.get(subjectCode);
     if (!subject || !teacherId) continue;
+    const isAddressed = rng() >= 0.6;
     studentQueryRows.push({
       studentId: student.id,
       teacherId,
@@ -774,16 +783,132 @@ const seedAcademicData = async () => {
       ]),
       topic: pick(weaknessesBySubject[subjectCode] || ['general']),
       source: 'ai_tutor',
-      status: rng() < 0.6 ? 'pending' : 'addressed',
+      status: isAddressed ? 'addressed' : 'pending',
       askedAt: addDays(now, -randInt(1, 12)),
-      addressedAt: rng() < 0.6 ? null : addDays(now, -randInt(0, 5)),
-      studentFeedback: null,
+      addressedAt: isAddressed ? addDays(now, -randInt(0, 5)) : null,
+      studentFeedback: isAddressed ? pick(['understood', 'still_confused']) : null,
       addedToPortfolio: rng() < 0.2,
       createdAt: addDays(now, -randInt(1, 12)),
     });
   }
   if (studentQueryRows.length > 0) {
     await db.insert(studentQueries).values(studentQueryRows);
+  }
+
+  const aiTutorSessionRows: any[] = [];
+  for (let i = 0; i < 24; i += 1) {
+    const student = pick(insertedStudents);
+    const subjectCode = pick(subjectCodes);
+    const subject = subjectByCode.get(subjectCode);
+    if (!subject) continue;
+    const sessionStart = addDays(now, -randInt(3, 55));
+    const duration = randInt(12, 35);
+    aiTutorSessionRows.push({
+      studentId: student.id,
+      subjectId: subject.id,
+      messages: [
+        {
+          role: 'student',
+          content: 'I am stuck on this topic. Can you help?',
+          timestamp: sessionStart.toISOString(),
+        },
+        {
+          role: 'tutor',
+          content: 'Sure. Let us break it into steps and try an example.',
+          timestamp: addDays(sessionStart, 0).toISOString(),
+        },
+        {
+          role: 'student',
+          content: 'That makes sense now. Can we do one more?',
+          timestamp: addDays(sessionStart, 0).toISOString(),
+        },
+      ],
+      sessionSummary: 'Reviewed key steps and practiced one example.',
+      topicsDiscussed: pickMany(['revision set', 'practice quiz', 'concept map', 'daily recap'], 2),
+      understandingLevel: { before: randInt(1, 3), after: randInt(3, 5) },
+      createdAt: sessionStart,
+      endedAt: addDays(sessionStart, 0),
+    });
+  }
+  if (aiTutorSessionRows.length > 0) {
+    await db.insert(aiTutorSessions).values(aiTutorSessionRows);
+  }
+
+  const portfolioRows: any[] = [];
+  insertedTeachers.forEach((teacher, index) => {
+    const subject = subjectByCode.get(teacherSeed[index].subjectCode);
+    if (!subject) return;
+    for (let week = 0; week < 8; week += 1) {
+      const metricDate = addDays(classStartDate, week * 7 + 3);
+      if (metricDate > now) continue;
+      portfolioRows.push(
+        {
+          teacherId: teacher.id,
+          metricType: 'class_engagement',
+          value: Number((60 + week * 3 + randInt(-4, 6)).toFixed(2)),
+          date: metricDate,
+          details: { classId: schoolClass.id, subjectId: subject.id, note: 'Participation index' },
+          createdAt: metricDate,
+        },
+        {
+          teacherId: teacher.id,
+          metricType: 'assignment_completion',
+          value: Number((55 + week * 4 + randInt(-6, 8)).toFixed(2)),
+          date: metricDate,
+          details: { classId: schoolClass.id, subjectId: subject.id, note: 'On-time submission rate' },
+          createdAt: metricDate,
+        },
+        {
+          teacherId: teacher.id,
+          metricType: 'avg_test_score',
+          value: Number((65 + week * 2 + randInt(-5, 7)).toFixed(2)),
+          date: metricDate,
+          details: { classId: schoolClass.id, subjectId: subject.id, note: 'Rolling 4-week average' },
+          createdAt: metricDate,
+        }
+      );
+    }
+  });
+  if (portfolioRows.length > 0) {
+    await db.insert(teacherPortfolio).values(portfolioRows);
+  }
+
+  const webhookRows: any[] = [];
+  for (let i = 0; i < 8; i += 1) {
+    const payload = {
+      event: pick(['payment_success', 'subscription_renewal', 'sms_delivery', 'email_delivery']),
+      schoolId: school.id,
+      timestamp: addDays(now, -randInt(1, 50)).toISOString(),
+    };
+    webhookRows.push({
+      webhookType: payload.event,
+      payload,
+      response: { status: 200, message: 'ok' },
+      status: rng() < 0.85 ? 'success' : 'failed',
+      createdAt: addDays(now, -randInt(1, 50)),
+    });
+  }
+  if (webhookRows.length > 0) {
+    await db.insert(webhookLogs).values(webhookRows);
+  }
+
+  const embeddingRows: any[] = [];
+  subjectByCode.forEach((subject) => {
+    for (let i = 0; i < 2; i += 1) {
+      embeddingRows.push({
+        subjectId: subject.id,
+        chapter: `Chapter ${i + 1}`,
+        topic: pick(['definitions', 'examples', 'practice', 'summary']),
+        chunkIndex: i + 1,
+        content: `${subject.name} textbook chunk ${i + 1} content for retrieval.`,
+        embedding: makeVector(1536),
+        metadata: { source: 'seed', tokens: randInt(120, 260) },
+        createdAt: addDays(classStartDate, 5 + i * 7),
+      });
+    }
+  });
+  if (embeddingRows.length > 0) {
+    await db.insert(subjectTextbookEmbeddings).values(embeddingRows);
   }
 
   console.log('✅ Teachers, students, and academic data seeded successfully!');
