@@ -250,13 +250,18 @@ export function AITutorTab({ subject }: AITutorTabProps) {
               onChange={handleImageSelect}
             />
             <Button 
+              type="button"
               variant="outline" 
               size="icon" 
-              className="shrink-0 h-10 w-10"
-              onClick={() => fileInputRef.current?.click()}
+              className="shrink-0 h-10 w-10 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
               disabled={isUploading || mutation.isPending}
             >
-              <ImagePlus className="w-4 h-4" />
+              <ImagePlus className="w-4 h-4 pointer-events-none" />
             </Button>
             <Textarea
               value={input}
