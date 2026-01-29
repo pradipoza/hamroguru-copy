@@ -182,19 +182,20 @@ export const addAiTutorMessage = async (
     'subject': subjectCode,
   };
 
-  let body: Buffer | undefined;
   if (message.imageUrl) {
     const imageName = path.basename(message.imageUrl);
-    headers['image'] = imageName;
     const fullPath = path.join(process.cwd(), 'uploads', imageName);
     if (fs.existsSync(fullPath)) {
-      body = fs.readFileSync(fullPath);
-      headers['Content-Type'] = 'application/octet-stream';
+      const imageBuffer = fs.readFileSync(fullPath);
+      const base64Image = imageBuffer.toString('base64');
+      const ext = path.extname(imageName).toLowerCase().replace('.', '');
+      const mimeType = ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png';
+      headers['image'] = `data:${mimeType};base64,${base64Image}`;
     }
   }
 
   try {
-    const response = await axios.post(webhookUrl, body || '', {
+    const response = await axios.post(webhookUrl, '', {
       headers,
       timeout: 60000,
     });
