@@ -40,3 +40,27 @@ export const getPendingTasks = async (req: AuthenticatedRequest, res: Response) 
     res.status(500).json({ message: 'Error fetching pending tasks', error });
   }
 };
+
+export const getProfileDetails = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication error' });
+    }
+    const data = await studentService.getProfileDetails(req.user.id);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching profile details', error });
+  }
+};
+
+export const getProgress = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication error' });
+    }
+    const data = await studentService.getProgressSummary(req.user.id);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching progress data', error });
+  }
+};

@@ -1,11 +1,13 @@
-import { currentStudent } from '@/lib/mockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { User, Bell, Moon, Globe, LogOut } from 'lucide-react';
+import { useStudentProfile } from '@/hooks/useStudentData';
 
 export default function SettingsPage() {
+  const { data: profile } = useStudentProfile();
+
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <div className="mb-6">
@@ -26,12 +28,12 @@ export default function SettingsPage() {
         <CardContent>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-xl font-medium">
-              {currentStudent.name.charAt(0)}
+              {profile?.fullName?.charAt(0) || 'S'}
             </div>
             <div>
-              <p className="font-medium text-foreground">{currentStudent.name}</p>
+              <p className="font-medium text-foreground">{profile?.fullName || 'Student'}</p>
               <p className="text-sm text-muted-foreground">
-                Grade {currentStudent.grade}-{currentStudent.section} • {currentStudent.school}
+                Grade {profile?.grade}-{profile?.section} • {profile?.schoolName || 'School'}
               </p>
             </div>
           </div>

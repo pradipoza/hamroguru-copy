@@ -1,10 +1,28 @@
-import { mockProgressData } from '@/lib/demoMockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, Award, Target, BookOpen } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { TrendingUp, Award, Target, BookOpen, Loader2 } from 'lucide-react';
+import { useStudentProgress } from '@/hooks/useStudentData';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function ProgressPage() {
+  const { data, isLoading, isError } = useStudentProgress();
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto text-center text-muted-foreground">
+        Unable to load progress right now.
+      </div>
+    );
+  }
+
   const { 
     overallProgress, 
     completedAssignments, 
@@ -13,7 +31,7 @@ export default function ProgressPage() {
     totalPoints, 
     subjectProgress, 
     recentActivity 
-  } = mockProgressData;
+  } = data;
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -47,7 +65,7 @@ export default function ProgressPage() {
                 <Target className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">{completedAssignments}</p>
+                <p className="text-2xl font-semibold">{completedAssignments}/{totalAssignments}</p>
                 <p className="text-xs text-muted-foreground">Completed</p>
               </div>
             </div>
@@ -117,7 +135,9 @@ export default function ProgressPage() {
                   <p className="text-sm font-medium">{activity.action}</p>
                   <p className="text-xs text-muted-foreground">{activity.subject}</p>
                 </div>
-                <span className="text-xs text-muted-foreground">{activity.time}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(activity.time), { addSuffix: true })}
+                </span>
               </div>
             ))}
           </div>

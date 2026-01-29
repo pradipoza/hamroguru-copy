@@ -16,23 +16,22 @@ import {
   Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  mockTeacherClasses,
-  mockClassStudents,
-  mockAssignments,
-  mockSubmissionsToGrade,
-} from '@/lib/demoMockData';
+import { useTeacherAssignments, useTeacherClasses, useTeacherStudents, useTeacherSubmissions } from '@/hooks/useTeacherData';
 
 export default function ClassDetailPage() {
   const { classId } = useParams();
 
-  const classInfoFromMock = mockTeacherClasses.find(c => c.classId === classId);
-  const classInfo = classInfoFromMock ? { ...classInfoFromMock, name: classInfoFromMock.className } : null;
-  
-  const students = mockClassStudents;
-  const assignments = mockAssignments;
-  const pendingSubmissions = mockSubmissionsToGrade;
-  const isLoading = false;
+  const { data: classes = [], isLoading: classesLoading } = useTeacherClasses();
+  const { data: students = [], isLoading: studentsLoading } = useTeacherStudents(classId);
+  const { data: assignments = [], isLoading: assignmentsLoading } = useTeacherAssignments();
+  const { data: submissions = [], isLoading: submissionsLoading } = useTeacherSubmissions('pending_review');
+
+  const classInfoFromData = classes.find(c => c.classId === classId);
+  const classInfo = classInfoFromData ? { ...classInfoFromData, name: classInfoFromData.className } : null;
+
+  const classAssignments = assignments.filter(a => a.classId === classId);
+  const pendingSubmissions = submissions.filter(s => classAssignments.some(a => a.id === s.assignmentId));
+  const isLoading = classesLoading || studentsLoading || assignmentsLoading || submissionsLoading;
 
   if (isLoading) {
     return (
@@ -117,7 +116,7 @@ export default function ClassDetailPage() {
               <BookOpen className="w-5 h-5 text-info" />
             </div>
             <div>
-              <p className="text-2xl font-semibold">{assignments?.length || 0}</p>
+              <p className="text-2xl font-semibold">{classAssignments?.length || 0}</p>
               <p className="text-xs text-muted-foreground">Assignments</p>
             </div>
           </CardContent>
@@ -200,8 +199,8 @@ export default function ClassDetailPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {assignments && assignments.length > 0 ? (
-                assignments.map((assignment) => (
+              {classAssignments && classAssignments.length > 0 ? (
+                classAssignments.map((assignment) => (
                   <div 
                     key={assignment.id}
                     className="p-4 rounded-lg border border-border"
@@ -227,7 +226,7 @@ export default function ClassDetailPage() {
                       </div>
                     </div>
                     <Progress 
-                      value={(assignment.submittedCount / assignment.totalStudents) * 100} 
+                      value={assignment.totalStudents > 0 ? (assignment.submittedCount / assignment.totalStudents) * 100 : 0} 
                       className="h-2 mt-3" 
                     />
                   </div>

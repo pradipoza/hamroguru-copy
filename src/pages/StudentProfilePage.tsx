@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { 
-  User, 
   BookOpen, 
   ClipboardCheck, 
   FileText, 
@@ -15,7 +14,8 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Flame
+  Flame,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,27 +24,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
-import {
-  mockStudentProfile as studentProfile,
-  mockMathHomework as homeworkHistory,
-  mockMathTests as testHistory,
-  mockMathNotes as noteHistory,
-  mockLearningInsights as learningInsights,
-  mockRecentActivityForProfile as recentActivity,
-  mockSubjects as subjects,
-} from '@/lib/demoMockData';
+import { useStudentProfileDetails } from '@/hooks/useStudentData';
 
 const StudentProfilePage = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { data, isLoading, isError } = useStudentProfileDetails();
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError || !data?.profile) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Unable to load student profile right now.
+      </div>
+    );
+  }
+
+  const {
+    profile: studentProfile,
+    subjects = [],
+    homeworkHistory = [],
+    testHistory = [],
+    noteHistory = [],
+    learningInsights = [],
+    recentActivity = [],
+  } = data;
 
   const getHomeworkStats = () => {
     const total = homeworkHistory.length;
-    const completed = homeworkHistory.filter(h => h.status === 'checked' || h.status === 'submitted').length;
+    const completed = homeworkHistory.filter(h => ['checked', 'reviewed', 'submitted', 'late'].includes(h.status)).length;
     const missed = homeworkHistory.filter(h => h.status === 'missed').length;
     const late = homeworkHistory.filter(h => h.status === 'late').length;
     const pending = homeworkHistory.filter(h => h.status === 'pending').length;
-    const checked = homeworkHistory.filter(h => h.status === 'checked');
-    const avgScore = checked.reduce((acc, h) => acc + (h.score || 0), 0) / (checked.length || 1);
+    const checked = homeworkHistory.filter(h => h.status === 'checked' || h.status === 'reviewed');
+    const scored = checked.filter(h => typeof h.score === 'number');
+    const avgScore = scored.reduce((acc, h) => {
+      const max = h.maxScore || 10;
+      return acc + ((h.score || 0) / max) * 100;
+    }, 0) / (scored.length || 1);
     return { total, completed, missed, late, pending, avgScore };
   };
 
@@ -52,16 +75,16 @@ const StudentProfilePage = () => {
     const total = testHistory.length;
     const completed = testHistory.filter(t => t.status === 'completed').length;
     const upcoming = testHistory.filter(t => t.status === 'upcoming').length;
-    const completedTests = testHistory.filter(t => t.status === 'completed' && t.score !== undefined);
+    const completedTests = testHistory.filter(t => t.status === 'completed' && typeof t.score === 'number');
     const avgScore = completedTests.reduce((acc, t) => acc + ((t.score || 0) / (t.maxScore || 100) * 100), 0) / (completedTests.length || 1);
     return { total, completed, upcoming, avgScore };
   };
 
   const getNoteStats = () => {
     const total = noteHistory.length;
-    const verified = noteHistory.filter(n => n.verified).length;
-    const completed = noteHistory.filter(n => n.isCompleted).length;
-    const pending = noteHistory.filter(n => !n.isCompleted).length;
+    const verified = noteHistory.filter(n => n.status === 'verified').length;
+    const completed = noteHistory.filter(n => n.status === 'completed').length;
+    const pending = noteHistory.filter(n => n.status === 'pending').length;
     return { total, verified, completed, pending };
   };
 
@@ -70,7 +93,7 @@ const StudentProfilePage = () => {
   const noteStats = getNoteStats();
 
   const getSubjectName = (subjectId: string) => {
-    return subjects.find(s => s.id === subjectId)?.name || subjectId;
+    return subjects.find((s: any) => s.id === subjectId)?.name || 'Subject';
   };
 
   const getStatusBadge = (status: string) => {
@@ -83,6 +106,7 @@ const StudentProfilePage = () => {
       late: { variant: 'destructive', icon: <AlertCircle className="w-3 h-3" /> },
       missed: { variant: 'destructive', icon: <XCircle className="w-3 h-3" /> },
       upcoming: { variant: 'secondary', icon: <Calendar className="w-3 h-3" /> },
+      available: { variant: 'secondary', icon: <Calendar className="w-3 h-3" /> },
     };
     const config = variants[status] || { variant: 'outline', icon: null };
     return (
@@ -107,13 +131,13 @@ const StudentProfilePage = () => {
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <Avatar className="w-20 h-20">
               <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                {studentProfile.name.split(' ').map(n => n[0]).join('')}
+                {studentProfile.fullName.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold">{studentProfile.name}</h1>
+                <h1 className="text-2xl font-bold">{studentProfile.fullName}</h1>
                 <Badge variant="secondary" className="gap-1">
                   <Flame className="w-3 h-3 text-orange-500" />
                   {studentProfile.streakDays} day streak
@@ -121,7 +145,7 @@ const StudentProfilePage = () => {
                 <Badge variant="outline">{studentProfile.totalPoints} points</Badge>
               </div>
               <p className="text-muted-foreground">
-                Grade {studentProfile.grade}, Section {studentProfile.section} • {studentProfile.school}
+                Grade {studentProfile.grade}, Section {studentProfile.section} • {studentProfile.schoolName}
               </p>
               <div className="flex gap-4 text-sm text-muted-foreground flex-wrap">
                 <span>{studentProfile.email}</span>
@@ -156,21 +180,47 @@ const StudentProfilePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 border rounded-lg">
               <div className="text-sm text-muted-foreground mb-1">Learning Style</div>
-              <div className="font-medium capitalize">{studentProfile.learningStyle}</div>
+              <div className="font-medium capitalize">{studentProfile.learningStyle || 'balanced'}</div>
             </div>
             <div className="p-4 border rounded-lg">
-              <div className="text-sm text-muted-foreground mb-1">Intelligence Level</div>
-              <div className="font-medium capitalize">{studentProfile.intelligenceLevel.replace('_', ' ')}</div>
+              <div className="text-sm text-muted-foreground mb-1">Learning Pace</div>
+              <div className="font-medium capitalize">
+                {studentProfile.learningProfile?.learningPace || 'steady'}
+              </div>
             </div>
             <div className="p-4 border rounded-lg">
               <div className="text-sm text-muted-foreground mb-1">Preferred Study Time</div>
-              <div className="font-medium">{studentProfile.preferredStudyTime}</div>
+              <div className="font-medium">
+                {studentProfile.learningProfile?.preferredStudyTime || 'Evening'}
+              </div>
             </div>
             <div className="p-4 border rounded-lg col-span-1 md:col-span-2 lg:col-span-1">
               <div className="text-sm text-muted-foreground mb-1">Study Goal</div>
-              <div className="font-medium text-sm">{studentProfile.studyGoal}</div>
+              <div className="font-medium text-sm">
+                {studentProfile.learningProfile?.studyGoal || studentProfile.goals?.[0]}
+              </div>
             </div>
           </div>
+          {(studentProfile.learningProfile?.motivationTriggers || studentProfile.learningProfile?.supportNeeds) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="p-4 border rounded-lg">
+                <div className="text-sm text-muted-foreground mb-2">Motivation Triggers</div>
+                <div className="flex flex-wrap gap-1">
+                  {(studentProfile.learningProfile?.motivationTriggers || []).map((item: string, idx: number) => (
+                    <Badge key={idx} variant="outline">{item}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 border rounded-lg">
+                <div className="text-sm text-muted-foreground mb-2">Support Needs</div>
+                <div className="flex flex-wrap gap-1">
+                  {(studentProfile.learningProfile?.supportNeeds || []).map((item: string, idx: number) => (
+                    <Badge key={idx} variant="outline">{item}</Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -271,7 +321,9 @@ const StudentProfilePage = () => {
                     </div>
                     <div className="flex-1">
                       <div className="text-sm">{activity.description}</div>
-                      <div className="text-xs text-muted-foreground">{format(activity.date, 'PPp')}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {activity.date ? format(activity.date, 'PPp') : 'Recently'}
+                      </div>
                     </div>
                     {activity.subjectId && (
                       <Badge variant="outline" className="text-xs">
@@ -310,8 +362,8 @@ const StudentProfilePage = () => {
                         </div>
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span>Assigned: {format(hw.assignedDate, 'PP')}</span>
-                        <span>Due: {format(hw.dueDate, 'PP')}</span>
+                        <span>Assigned: {hw.assignedDate ? format(hw.assignedDate, 'PP') : 'TBD'}</span>
+                        <span>Due: {hw.dueDate ? format(hw.dueDate, 'PP') : 'TBD'}</span>
                         {hw.submittedAt && <span>Submitted: {format(hw.submittedAt, 'PP')}</span>}
                       </div>
                       {hw.feedback && (
@@ -345,7 +397,7 @@ const StudentProfilePage = () => {
                           <div className="text-sm text-muted-foreground flex items-center gap-2">
                             {getSubjectName(test.subjectId)}
                             <Badge variant="outline" className="text-xs capitalize">
-                              {test.type.replace('_', ' ')}
+                              {(test.type || 'unit').replace('_', ' ')}
                             </Badge>
                           </div>
                         </div>
@@ -359,8 +411,8 @@ const StudentProfilePage = () => {
                         </div>
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span>Date: {format(test.date, 'PPP')}</span>
-                        <span>Duration: {test.duration} mins</span>
+                        <span>Date: {test.date ? format(test.date, 'PPP') : 'TBD'}</span>
+                        <span>Duration: {test.duration || 0} mins</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {test.topicsAssessed.map((topic, i) => (

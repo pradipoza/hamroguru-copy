@@ -20,15 +20,15 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { mockClassStudents, mockTeacherClasses } from '@/lib/demoMockData';
+import { useTeacherClasses, useTeacherStudents } from '@/hooks/useTeacherData';
 
 export default function StudentProgressPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('all');
   
-  const allStudents = mockClassStudents;
-  const classes = mockTeacherClasses;
-  const isLoading = false;
+  const { data: allStudents = [], isLoading: studentsLoading } = useTeacherStudents();
+  const { data: classes = [], isLoading: classesLoading } = useTeacherClasses();
+  const isLoading = studentsLoading || classesLoading;
 
   const filteredStudents = (allStudents || []).filter((student) => {
     const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase());

@@ -1,5 +1,5 @@
 import { db } from '../../db';
-import { subjects, homeworkAssignments, homeworkSubmissions, studentNotes, tests, testResults, resources, aiTutorSessions } from '../../db/schema';
+import { subjects, homeworkAssignments, homeworkSubmissions, studentNotes, tests, testResults, resources, aiTutorSessions, studentProfiles, teacherClassAssignments, profiles, classes } from '../../db/schema';
 import { eq, and, desc, asc } from 'drizzle-orm';
 
 export const getAllSubjects = async () => {
@@ -10,6 +10,45 @@ export const getAllSubjects = async () => {
 export const getSubjectByCode = async (subjectCode: string) => {
   const [subjectData] = await db.select().from(subjects).where(eq(subjects.code, subjectCode));
   return subjectData;
+};
+
+export const getSubjectWithTeacherForStudent = async (subjectCode: string, studentId: string) => {
+  const [subjectData] = await db.select().from(subjects).where(eq(subjects.code, subjectCode));
+  if (!subjectData) return null;
+
+  const [studentProfile] = await db
+    .select({ classId: studentProfiles.classId })
+    .from(studentProfiles)
+    .where(eq(studentProfiles.userId, studentId));
+
+  if (!studentProfile?.classId) {
+    return subjectData;
+  }
+
+  const [classInfo] = await db
+    .select({ grade: classes.grade, section: classes.section })
+    .from(classes)
+    .where(eq(classes.id, studentProfile.classId));
+
+  const [assignment] = await db
+    .select({
+      teacherName: profiles.fullName,
+    })
+    .from(teacherClassAssignments)
+    .leftJoin(profiles, eq(teacherClassAssignments.teacherId, profiles.id))
+    .where(and(
+      eq(teacherClassAssignments.classId, studentProfile.classId),
+      eq(teacherClassAssignments.subjectId, subjectData.id)
+    ))
+    .orderBy(desc(teacherClassAssignments.createdAt))
+    .limit(1);
+
+  return {
+    ...subjectData,
+    teacherName: assignment?.teacherName || null,
+    classGrade: classInfo?.grade || null,
+    classSection: classInfo?.section || null,
+  };
 };
 
 export const getHomeworkForSubject = async (subjectId: string, classId: string, studentId: string) => {

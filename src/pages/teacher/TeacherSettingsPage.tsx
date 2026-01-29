@@ -4,10 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { currentTeacher } from '@/lib/teacherMockData';
 import { User, Bell, Shield, Mail } from 'lucide-react';
+import { useTeacherProfile } from '@/hooks/useTeacherData';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function TeacherSettingsPage() {
+  const { data: profileData } = useTeacherProfile();
+  const { user, profile } = useAuth();
+  const displayName = profileData?.profile?.fullName || profile?.fullName || 'Teacher';
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <div>
@@ -29,7 +33,7 @@ export default function TeacherSettingsPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-semibold text-primary">
-              {currentTeacher.name.charAt(0)}
+              {displayName.charAt(0)}
             </div>
             <Button variant="outline" size="sm">Change Photo</Button>
           </div>
@@ -37,15 +41,15 @@ export default function TeacherSettingsPage() {
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" defaultValue={currentTeacher.name} />
+              <Input id="name" defaultValue={displayName} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={currentTeacher.email} />
+              <Input id="email" type="email" defaultValue={user?.email || ''} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" type="tel" defaultValue={currentTeacher.phone} />
+              <Input id="phone" type="tel" defaultValue={profile?.phone || ''} />
             </div>
           </div>
           <Button>Save Changes</Button>

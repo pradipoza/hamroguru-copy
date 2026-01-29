@@ -20,12 +20,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { format, isToday } from 'date-fns';
-import { 
-  mockTodaysLessonPlans,
-  mockStudentQueries,
-  mockDailyDoses,
-  mockTeacherAssessments
-} from '@/lib/demoMockData';
+import { useTeacherAssessments, useTeacherDailyDoses, useTeacherLessonPlans, useTeacherQueries } from '@/hooks/useTeacherData';
 
 interface LessonPlan {
   id: string;
@@ -61,11 +56,11 @@ interface DailyDose {
 export default function LessonPlanPage() {
   const [selectedPlan, setSelectedPlan] = useState<LessonPlan | null>(null);
   
-  const lessonPlans = mockTodaysLessonPlans;
-  const queries = mockStudentQueries;
-  const dailyDoses = mockDailyDoses;
-  const assessments = mockTeacherAssessments;
-  const isLoading = false;
+  const { data: lessonPlans = [], isLoading: plansLoading } = useTeacherLessonPlans();
+  const { data: queries = [], isLoading: queriesLoading } = useTeacherQueries();
+  const { data: dailyDoses = [], isLoading: dosesLoading } = useTeacherDailyDoses();
+  const { data: assessments = [], isLoading: assessmentsLoading } = useTeacherAssessments();
+  const isLoading = plansLoading || queriesLoading || dosesLoading || assessmentsLoading;
 
   const todaysPlans = (lessonPlans || []).filter(p => isToday(p.date));
   const upcomingPlans = (lessonPlans || []).filter(p => p.status === 'upcoming' && !isToday(p.date));

@@ -1,13 +1,16 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
-import { currentStudent } from '@/lib/mockData';
 import { Menu } from 'lucide-react';
+import { useStudentProfile } from '@/hooks/useStudentData';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { data: profile } = useStudentProfile();
+  const displayName = profile?.fullName || 'Student';
+  const initials = displayName.charAt(0);
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-muted/30">
@@ -22,13 +25,13 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-foreground">{currentStudent.name}</p>
+                <p className="text-sm font-medium text-foreground">{displayName}</p>
                 <p className="text-xs text-muted-foreground">
-                  Grade {currentStudent.grade}-{currentStudent.section}
+                  {profile?.grade ? `Grade ${profile.grade}-${profile.section}` : 'Student'}
                 </p>
               </div>
               <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-sm font-medium text-primary-foreground shadow-sm">
-                {currentStudent.name.charAt(0)}
+                {initials}
               </div>
             </div>
           </header>

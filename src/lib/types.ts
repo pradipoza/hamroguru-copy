@@ -23,6 +23,21 @@ export interface Subject {
   color: string | null;
 }
 
+export interface SubjectSummary {
+  id: string;
+  name: string;
+  nameNepali: string | null;
+  teacherName: string | null;
+  icon: string | null;
+  color: string | null;
+  pendingHomework: number;
+  pendingNotes: number;
+  upcomingTests: number;
+  classGrade: number | null;
+  classSection: string | null;
+  studentCount: number;
+}
+
 export interface Homework {
   id: string;
   title: string;

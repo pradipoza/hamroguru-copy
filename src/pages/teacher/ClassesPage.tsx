@@ -2,11 +2,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, TrendingUp, ClipboardCheck, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { mockTeacherClasses } from '@/lib/demoMockData';
+import { useTeacherClasses } from '@/hooks/useTeacherData';
 
 export default function ClassesPage() {
-  const classes = mockTeacherClasses;
-  const isLoading = false;
+  const { data: classes = [], isLoading } = useTeacherClasses();
 
   if (isLoading) {
     return (

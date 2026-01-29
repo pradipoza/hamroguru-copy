@@ -9,6 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { GraduationCap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SCHOOL_PROFILE, getClassLabel } from '@/lib/schoolConfig';
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -22,6 +26,15 @@ export default function AuthPage() {
   const [signUpPassword, setSignUpPassword] = useState('');
   const [signUpName, setSignUpName] = useState('');
   const [signUpRole, setSignUpRole] = useState<'student' | 'teacher'>('student');
+  const [signUpSubject, setSignUpSubject] = useState('');
+
+  const { data: subjectOptions = [], isLoading: subjectsLoading } = useQuery({
+    queryKey: ['publicSubjects'],
+    queryFn: async () => {
+      const { data } = await api.get('/subjects/public/list');
+      return data || [];
+    },
+  });
 
   // Redirect if already logged in
   if (user) {
@@ -64,12 +77,23 @@ export default function AuthPage() {
       return;
     }
 
+    if (signUpRole === 'teacher' && !signUpSubject) {
+      toast({
+        title: 'Select a subject',
+        description: 'Teachers must select a subject they teach.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await signUp({
         email: signUpEmail,
         password: signUpPassword,
         fullName: signUpName,
         role: signUpRole,
+        subjectCode: signUpRole === 'teacher' ? signUpSubject : undefined,
       });
       toast({
         title: 'Account created!',
@@ -94,8 +118,8 @@ export default function AuthPage() {
           <div className="w-12 h-12 rounded-xl bg-primary mx-auto mb-4 flex items-center justify-center">
             <GraduationCap className="w-7 h-7 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">EduNepal</CardTitle>
-          <CardDescription>Your personalized learning companion</CardDescription>
+          <CardTitle className="text-2xl">{SCHOOL_PROFILE.name}</CardTitle>
+          <CardDescription>{getClassLabel()} Learning Platform</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
@@ -193,6 +217,23 @@ export default function AuthPage() {
                     </div>
                   </RadioGroup>
                 </div>
+                {signUpRole === 'teacher' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-subject">Teaching Subject</Label>
+                    <Select value={signUpSubject} onValueChange={setSignUpSubject}>
+                      <SelectTrigger id="signup-subject">
+                        <SelectValue placeholder={subjectsLoading ? 'Loading subjects...' : 'Select subject'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjectOptions.map((subject: any) => (
+                          <SelectItem key={subject.code} value={subject.code}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>

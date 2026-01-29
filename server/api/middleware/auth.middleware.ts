@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 export interface AuthenticatedRequest extends Request {
-  user?: { id: string };
+  user?: { id: string; role?: string };
 }
 
 export const verifyToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -14,7 +14,7 @@ export const verifyToken = (req: AuthenticatedRequest, res: Response, next: Next
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_default_secret');
-    req.user = decoded as { id: string };
+    req.user = decoded as { id: string; role?: string };
   } catch (err) {
     return res.status(401).json({ message: 'Invalid Token' });
   }

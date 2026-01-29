@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { Subject } from '@/lib/types';
+import { SubjectSummary } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import subjectTexture from '@/assets/subject-texture.jpg';
 
 interface SubjectCardProps {
-  subject: Subject;
+  subject: SubjectSummary;
 }
 
 // Color overlays with gradients
@@ -20,6 +20,7 @@ const colorOverlays: Record<string, string> = {
 
 // Generate initials from teacher name
 function getTeacherInitials(name: string): string {
+  if (!name) return '--';
   return name
     .split(' ')
     .map(n => n[0])
@@ -30,7 +31,9 @@ function getTeacherInitials(name: string): string {
 
 export function SubjectCard({ subject }: SubjectCardProps) {
   const totalPending = subject.pendingHomework + subject.pendingNotes + subject.upcomingTests;
-  const initials = getTeacherInitials(subject.teacher);
+  const initials = getTeacherInitials(subject.teacherName || '');
+  const classLabel = subject.classGrade ? `Grade ${subject.classGrade}-${subject.classSection || 'A'}` : 'Class';
+  const teacherLabel = subject.teacherName || 'Teacher not assigned';
 
   return (
     <Link to={`/subject/${subject.id}`}>
@@ -49,7 +52,7 @@ export function SubjectCard({ subject }: SubjectCardProps) {
           {/* Subject info */}
           <div className="absolute bottom-4 left-4 right-16 z-10">
             <h3 className="text-lg font-semibold text-white truncate">{subject.name}</h3>
-            <p className="text-sm text-white/80 truncate">Grade 10-A</p>
+            <p className="text-sm text-white/80 truncate">{classLabel}</p>
           </div>
 
           {/* Subject icon */}
@@ -64,7 +67,7 @@ export function SubjectCard({ subject }: SubjectCardProps) {
         {/* Content section */}
         <div className="p-4 pt-3 min-h-[80px]">
           {/* Teacher name */}
-          <p className="text-sm text-foreground font-medium mb-3">{subject.teacher}</p>
+          <p className="text-sm text-foreground font-medium mb-3">{teacherLabel}</p>
           
           {/* Pending tasks or student count */}
           <div className="flex items-center justify-between">
@@ -92,7 +95,7 @@ export function SubjectCard({ subject }: SubjectCardProps) {
             
             {/* Student count indicator like reference */}
             <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
-              +24
+              {subject.studentCount} students
             </span>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { NotesTab } from '@/components/subject/NotesTab';
 import { TestsTab } from '@/components/subject/TestsTab';
 import { ResourcesTab } from '@/components/subject/ResourcesTab';
 import { cn } from '@/lib/utils';
+import { SCHOOL_PROFILE } from '@/lib/schoolConfig';
 import { 
   ArrowLeft, 
   Bot, 
@@ -83,7 +84,7 @@ export default function SubjectPage() {
     id: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
     name: subject.name,
     nameNepali: subject.nameNepali,
-    teacher: '',
+    teacher: subject.teacherName || '',
     icon: subject.icon,
     color: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
     pendingHomework: 0,
@@ -117,7 +118,7 @@ export default function SubjectPage() {
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
                 <GraduationCap className="w-5 h-5" />
               </div>
-              <span className="font-semibold">EduNepal</span>
+              <span className="font-semibold">{SCHOOL_PROFILE.name}</span>
             </div>
           </div>
         </div>

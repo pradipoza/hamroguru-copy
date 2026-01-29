@@ -1,7 +1,5 @@
-import { mockPendingTasks } from '@/lib/demoMockData';
-
-// Define the type based on the mock data structure for the demo
-type PendingTask = typeof mockPendingTasks[0];
+import { usePendingTasks } from '@/hooks/useStudentData';
+import { PendingTask } from '@/hooks/useStudentData';
 import { cn } from '@/lib/utils';
 import { FileText, BookOpen, ClipboardCheck, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -43,8 +41,7 @@ function formatDueDate(date: Date, isOverdue: boolean): string {
 }
 
 export default function PendingTasksPage() {
-  const tasks = mockPendingTasks;
-  const isLoading = false;
+  const { data: tasks = [], isLoading, isError } = usePendingTasks();
   
   const overdueTasks = tasks?.filter(t => t.isOverdue) || [];
   const upcomingTasks = tasks?.filter(t => !t.isOverdue) || [];
@@ -53,6 +50,14 @@ export default function PendingTasksPage() {
     return (
       <div className="p-6 max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto text-center text-muted-foreground">
+        Unable to load pending tasks right now.
       </div>
     );
   }
@@ -96,7 +101,7 @@ export default function PendingTasksPage() {
         </div>
       )}
 
-      {(!tasks || tasks.length === 0) && (
+      {tasks.length === 0 && (
         <div className="text-center py-16">
           <ClipboardCheck className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
           <p className="text-muted-foreground">All caught up! No pending tasks.</p>

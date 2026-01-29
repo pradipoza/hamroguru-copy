@@ -1,5 +1,17 @@
-import { pgTable, text, timestamp, uuid, integer, unique, pgEnum, jsonb, decimal, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, integer, unique, pgEnum, jsonb, decimal, boolean, date, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return 'vector(1536)';
+  },
+  toDriver(value) {
+    return `[${value.join(',')}]`;
+  },
+  fromDriver(value) {
+    return value as unknown as number[];
+  },
+});
 
 // ENUMS
 export const appRoleEnum = pgEnum('app_role', ['student', 'teacher', 'admin']);
@@ -81,6 +93,7 @@ export const studentProfiles = pgTable('student_profiles', {
   classId: uuid('class_id').references(() => classes.id, { onDelete: 'set null' }),
   rollNumber: integer('roll_number'),
   learningStyle: text('learning_style'),
+  learningProfile: jsonb('learning_profile'),
   goals: text('goals').array(),
   interests: text('interests').array(),
   parentContact: text('parent_contact'),
@@ -205,7 +218,7 @@ export const teacherProfiles = pgTable('teacher_profiles', {
   qualification: text('qualification'),
   subjectsTaught: text('subjects_taught').array(),
   yearsExperience: integer('years_experience').default(0),
-  joinDate: timestamp('join_date'),
+  joinDate: date('join_date'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -228,7 +241,7 @@ export const lessonPlans = pgTable('lesson_plans', {
   teacherId: uuid('teacher_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   classId: uuid('class_id').notNull().references(() => classes.id, { onDelete: 'cascade' }),
   subjectId: uuid('subject_id').notNull().references(() => subjects.id, { onDelete: 'cascade' }),
-  date: timestamp('date').notNull(),
+  date: date('date').notNull(),
   topics: text('topics').array(),
   studentQueries: jsonb('student_queries').array(),
   weakAreas: text('weak_areas').array(),
@@ -244,7 +257,7 @@ export const dailyDoses = pgTable('daily_doses', {
   id: uuid('id').primaryKey().defaultRandom(),
   teacherId: uuid('teacher_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   subjectId: uuid('subject_id').notNull().references(() => subjects.id, { onDelete: 'cascade' }),
-  date: timestamp('date').notNull().defaultNow(),
+  date: date('date').notNull().defaultNow(),
   title: text('title').notNull(),
   description: text('description'),
   content: text('content'),
@@ -291,7 +304,7 @@ export const teacherPortfolio = pgTable('teacher_portfolio', {
   teacherId: uuid('teacher_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   metricType: text('metric_type').notNull(),
   value: decimal('value', { precision: 10, scale: 2 }),
-  date: timestamp('date').notNull().defaultNow(),
+  date: date('date').notNull().defaultNow(),
   details: jsonb('details'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -316,6 +329,22 @@ export const resources = pgTable('resources', {
   isBookmarked: boolean('is_bookmarked').default(false),
   recommended: boolean('recommended').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const subjectTextbookEmbeddings = pgTable('subject_textbook_embeddings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  subjectId: uuid('subject_id').notNull().references(() => subjects.id, { onDelete: 'cascade' }),
+  chapter: text('chapter'),
+  topic: text('topic'),
+  chunkIndex: integer('chunk_index').notNull(),
+  content: text('content').notNull(),
+  embedding: vector('embedding').notNull(),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    uniqueSubjectChunk: unique('subject_textbook_embeddings_subject_id_chunk_index_unique').on(table.subjectId, table.chunkIndex),
+  };
 });
 
 // RELATIONS

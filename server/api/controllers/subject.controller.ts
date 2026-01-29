@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import * as subjectService from '../services/subject.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { db } from '../../db';
+import { studentProfiles } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export const getAllSubjects = async (req: Request, res: Response) => {
   try {
@@ -11,9 +14,11 @@ export const getAllSubjects = async (req: Request, res: Response) => {
   }
 };
 
-export const getSubject = async (req: Request, res: Response) => {
+export const getSubject = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const subject = await subjectService.getSubjectByCode(req.params.subjectCode);
+    const subject = req.user
+      ? await subjectService.getSubjectWithTeacherForStudent(req.params.subjectCode, req.user.id)
+      : await subjectService.getSubjectByCode(req.params.subjectCode);
     if (!subject) {
       return res.status(404).json({ message: 'Subject not found' });
     }
@@ -46,16 +51,26 @@ export const getTests = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(401).json({ message: 'Authentication error' });
     }
     const studentId = req.user.id;
-    // TODO: Get classId from student's profile
-    const classId = 'mock-class-id'; // Placeholder
+    
+    // Get classId from student's profile
+    const [studentProfile] = await db
+      .select({ classId: studentProfiles.classId })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, studentId));
+
+    if (!studentProfile?.classId) {
+      return res.json([]); // Return empty array if student has no class assigned
+    }
+
     const subject = await subjectService.getSubjectByCode(req.params.subjectCode);
     if (!subject) {
       return res.status(404).json({ message: 'Subject not found' });
     }
-    const tests = await subjectService.getTestsForSubject(subject.id, classId, studentId);
+    const tests = await subjectService.getTestsForSubject(subject.id, studentProfile.classId, studentId);
     res.json(tests);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching tests', error });
+    console.error('Error fetching tests:', error);
+    res.status(500).json({ message: 'Error fetching tests', error: error instanceof Error ? error.message : String(error) });
   }
 };
 
@@ -108,15 +123,25 @@ export const getHomework = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(401).json({ message: 'Authentication error' });
     }
     const studentId = req.user.id;
-    // TODO: Get classId from student's profile
-    const classId = 'mock-class-id'; // Placeholder
+    
+    // Get classId from student's profile
+    const [studentProfile] = await db
+      .select({ classId: studentProfiles.classId })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, studentId));
+
+    if (!studentProfile?.classId) {
+      return res.json([]); // Return empty array if student has no class assigned
+    }
+
     const subject = await subjectService.getSubjectByCode(req.params.subjectCode);
     if (!subject) {
       return res.status(404).json({ message: 'Subject not found' });
     }
-    const homework = await subjectService.getHomeworkForSubject(subject.id, classId, studentId);
+    const homework = await subjectService.getHomeworkForSubject(subject.id, studentProfile.classId, studentId);
     res.json(homework);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching homework', error });
+    console.error('Error fetching homework:', error);
+    res.status(500).json({ message: 'Error fetching homework', error: error instanceof Error ? error.message : String(error) });
   }
 };

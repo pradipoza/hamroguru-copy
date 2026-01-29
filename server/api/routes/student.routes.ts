@@ -6,6 +6,8 @@ const router = Router();
 
 router.get('/dashboard', verifyToken, studentController.getDashboard);
 router.get('/profile', verifyToken, studentController.getProfile);
+router.get('/profile-details', verifyToken, studentController.getProfileDetails);
 router.get('/pending-tasks', verifyToken, studentController.getPendingTasks);
+router.get('/progress', verifyToken, studentController.getProgress);
 
 export default router;

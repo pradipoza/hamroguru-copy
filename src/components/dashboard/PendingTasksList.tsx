@@ -1,7 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PendingTask } from '@/lib/types';
-import { subjects } from '@/lib/mockData';
+interface PendingTask {
+  id: string;
+  type: 'homework' | 'notes' | 'test';
+  subjectCode: string;
+  subjectName: string;
+  title: string;
+  dueDate: Date;
+  isOverdue: boolean;
+}
 import { cn } from '@/lib/utils';
 import { Clock, FileText, BookOpen, ClipboardCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -65,13 +72,13 @@ export function PendingTasksList({ tasks }: PendingTasksListProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         {tasks.slice(0, 6).map((task) => {
-          const subject = subjects.find((s) => s.id === task.subjectId);
+          const subjectColor = task.subjectCode || 'primary';
           const Icon = taskIcons[task.type];
 
           return (
             <Link
               key={task.id}
-              to={`/subject/${task.subjectId}?tab=${task.type === 'test' ? 'tests' : task.type}`}
+              to={`/subject/${task.subjectCode}?tab=${task.type === 'test' ? 'tests' : task.type}`}
               className="block"
             >
               <div
@@ -82,14 +89,14 @@ export function PendingTasksList({ tasks }: PendingTasksListProps) {
               >
                 <div className={cn(
                   'w-10 h-10 rounded-lg flex items-center justify-center text-white',
-                  `bg-subject-${subject?.color}`
+                  `bg-subject-${subjectColor}`
                 )}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{task.title}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{subject?.name}</span>
+                    <span>{task.subjectName}</span>
                     <span>•</span>
                     <span>{taskLabels[task.type]}</span>
                   </div>

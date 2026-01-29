@@ -89,13 +89,15 @@ export default function Dashboard() {
                   id: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
                   name: subject.name,
                   nameNepali: subject.nameNepali || '',
-                  teacher: 'N/A', // This needs to be fetched
+                  teacherName: subject.teacherName || null,
                   icon: subject.icon,
-                  color: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
-                  // These counts need to be calculated or fetched
-                  pendingHomework: 0,
-                  pendingNotes: 0,
-                  upcomingTests: 0,
+                  color: (subject.color || subject.code) as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
+                  pendingHomework: subject.pendingHomework || 0,
+                  pendingNotes: subject.pendingNotes || 0,
+                  upcomingTests: subject.upcomingTests || 0,
+                  classGrade: subject.classGrade || null,
+                  classSection: subject.classSection || null,
+                  studentCount: subject.studentCount || 0,
                 }} 
               />
             ))}

@@ -41,7 +41,7 @@ export function TeacherSidebar() {
   const { profile, signOut } = useAuth();
   const isCollapsed = state === 'collapsed';
 
-  const initials = profile?.full_name
+  const initials = profile?.fullName
     ?.split(' ')
     .map(n => n[0])
     .join('')
@@ -96,7 +96,7 @@ export function TeacherSidebar() {
           </Avatar>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{profile?.full_name || 'Teacher'}</p>
+              <p className="text-sm font-medium truncate">{profile?.fullName || 'Teacher'}</p>
               <p className="text-xs text-muted-foreground">Teacher</p>
             </div>
           )}

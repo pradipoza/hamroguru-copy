@@ -1,8 +1,8 @@
-import axios from 'axios';
+import api from '@/lib/api';
 
-const API_URL = '/api/teacher';
+const API_URL = '/teacher';
 
 export const getProfileData = async () => {
-  const response = await axios.get(`${API_URL}/profile`);
+  const response = await api.get(`${API_URL}/profile`);
   return response.data;
 };

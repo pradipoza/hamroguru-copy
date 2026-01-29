@@ -26,6 +26,56 @@ export function useStudentProfile() {
   });
 }
 
+export function useStudentProfileDetails() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['student-profile-details', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await api.get('/student/profile-details');
+      if (!data) return null;
+      return {
+        ...data,
+        homeworkHistory: (data.homeworkHistory || []).map((hw: any) => ({
+          ...hw,
+          assignedDate: hw.assignedDate ? new Date(hw.assignedDate) : null,
+          dueDate: hw.dueDate ? new Date(hw.dueDate) : null,
+          submittedAt: hw.submittedAt ? new Date(hw.submittedAt) : null,
+        })),
+        testHistory: (data.testHistory || []).map((test: any) => ({
+          ...test,
+          date: test.date ? new Date(test.date) : null,
+        })),
+        noteHistory: (data.noteHistory || []).map((note: any) => ({
+          ...note,
+          submittedAt: note.submittedAt ? new Date(note.submittedAt) : null,
+          verifiedAt: note.verifiedAt ? new Date(note.verifiedAt) : null,
+        })),
+        recentActivity: (data.recentActivity || []).map((activity: any) => ({
+          ...activity,
+          date: activity.date ? new Date(activity.date) : null,
+        })),
+      };
+    },
+    enabled: !!user,
+  });
+}
+
+export function useStudentProgress() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['student-progress', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await api.get('/student/progress');
+      return data;
+    },
+    enabled: !!user,
+  });
+}
+
 export function usePendingTasks() {
   const { user } = useAuth();
 

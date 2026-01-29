@@ -23,14 +23,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Sparkles, Clock, CheckCircle2, Loader2 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { mockAssignments, mockSubmissionsToGrade, mockTeacherClasses } from '@/lib/demoMockData';
+import { useTeacherAssignments, useTeacherClasses, useTeacherSubmissions } from '@/hooks/useTeacherData';
 
 export default function AssignmentsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const assignments = mockAssignments;
-  const submissions = mockSubmissionsToGrade;
-  const classes = mockTeacherClasses;
-  const isLoading = false;
+  const { data: assignments = [], isLoading: assignmentsLoading } = useTeacherAssignments();
+  const { data: submissions = [], isLoading: submissionsLoading } = useTeacherSubmissions('pending_review');
+  const { data: classes = [], isLoading: classesLoading } = useTeacherClasses();
+  const isLoading = assignmentsLoading || submissionsLoading || classesLoading;
 
   const activeAssignments = (assignments || []).filter(a => a.dueDate > new Date());
   const pastAssignments = (assignments || []).filter(a => a.dueDate <= new Date());
@@ -165,7 +165,7 @@ export default function AssignmentsPage() {
                     </div>
                   </div>
                   <Progress 
-                    value={(assignment.submittedCount / assignment.totalStudents) * 100} 
+                    value={assignment.totalStudents > 0 ? (assignment.submittedCount / assignment.totalStudents) * 100 : 0} 
                     className="h-2 mt-4" 
                   />
                 </CardContent>
