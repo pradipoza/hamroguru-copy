@@ -71,6 +71,14 @@ Preferred communication style: Simple, everyday language.
 ### AI Integration
 - n8n AI Agent Workflows (external integration via webhooks)
 - AI Tutor sessions managed through subject-specific endpoints
+- Chat history stored in `chat_memory` table with session_id = student_id
+- Webhook URL: `https://pradipoza.app.n8n.cloud/webhook/student-tutor`
+- Webhook headers: `student_id`, `question`, `subject`, `image` (optional)
+- Image uploads stored in `/uploads` directory
+
+### AI Tutor Webhooks by Subject
+- Configured in `server/api/services/subject.service.ts`
+- Currently all subjects use the same webhook (can be customized per subject)
 
 ### Third-Party Services
 - JWT for authentication tokens (`jsonwebtoken`, `jwt-decode`)
