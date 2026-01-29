@@ -82,6 +82,7 @@ export default function SubjectPage() {
   // Create a compatible subject object for the tabs
   const subjectForTabs = {
     id: subject.code as 'math' | 'science' | 'english' | 'nepali' | 'social' | 'computer',
+    code: subject.code,
     name: subject.name,
     nameNepali: subject.nameNepali,
     teacher: subject.teacherName || '',
