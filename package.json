@@ -5,8 +5,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "vite build",
-    "start": "NODE_ENV=production tsx server/index.ts",
+    "build": "vite build && esbuild server/index.ts --bundle --platform=node --outfile=dist/index.cjs --format=cjs --external:pg-native --external:better-sqlite3 --external:sqlite3 --external:mysql2 --external:oracledb --external:tedious --external:@libsql/client --external:lightningcss --external:vite --external:esbuild",
+    "start": "NODE_ENV=production node dist/index.cjs",
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/db/migrate.ts",
@@ -55,6 +55,7 @@
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.45.1",
     "embla-carousel-react": "^8.6.0",
+    "esbuild": "^0.27.2",
     "express": "^4.19.2",
     "input-otp": "^1.4.2",
     "jsonwebtoken": "^9.0.2",

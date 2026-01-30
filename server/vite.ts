@@ -1,19 +1,16 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
-import { createServer as createViteServer, type ViteDevServer } from "vite";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const viteConfig = {
-  server: { middlewareMode: true },
-  appType: "spa" as const,
-};
 
 export async function setupVite(app: Express, server: any) {
+  const { createServer: createViteServer } = await import("vite");
+  const { fileURLToPath } = await import("url");
+  
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  
   const vite = await createViteServer({
-    ...viteConfig,
+    server: { middlewareMode: true },
+    appType: "spa" as const,
     configFile: path.resolve(__dirname, "../vite.config.ts"),
   });
 
@@ -35,7 +32,7 @@ export async function setupVite(app: Express, server: any) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "../dist");
+  const distPath = path.resolve(process.cwd(), "dist");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
