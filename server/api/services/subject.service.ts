@@ -147,15 +147,43 @@ export const getResourcesForSubject = async (subjectId: string) => {
   return resourcesData;
 };
 
+const SUBJECT_CODE_MAP: Record<string, string[]> = {
+  computer: ['computer', 'computer_science'],
+  computer_science: ['computer', 'computer_science'],
+  math: ['math', 'mathematics'],
+  mathematics: ['math', 'mathematics'],
+  social: ['social', 'social_studies'],
+  social_studies: ['social', 'social_studies'],
+  english: ['english'],
+  nepali: ['nepali'],
+  science: ['science'],
+};
+
 export const getAiTutorSession = async (subjectCode: string, studentId: string) => {
-  const messages = await db
-    .select()
-    .from(chatMemory)
-    .where(and(
-      eq(chatMemory.sessionId, studentId),
-      eq(chatMemory.subject, subjectCode)
-    ))
-    .orderBy(asc(chatMemory.createdAt));
+  const possibleCodes = SUBJECT_CODE_MAP[subjectCode] || [subjectCode];
+  
+  const allMessages: Array<{
+    id: number;
+    sessionId: string;
+    message: unknown;
+    createdAt: Date;
+    subject: string | null;
+  }> = [];
+  
+  for (const code of possibleCodes) {
+    const msgs = await db
+      .select()
+      .from(chatMemory)
+      .where(and(
+        eq(chatMemory.sessionId, studentId),
+        eq(chatMemory.subject, code)
+      ))
+      .orderBy(asc(chatMemory.createdAt));
+    allMessages.push(...msgs);
+  }
+  
+  allMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const messages = allMessages;
 
   const formattedMessages = messages.map((msg: any) => ({
     role: msg.message?.type === 'human' ? 'user' : 'assistant',
