@@ -78,7 +78,13 @@ Preferred communication style: Simple, everyday language.
 
 ### AI Tutor Webhooks by Subject
 - Configured in `server/api/services/subject.service.ts`
-- Currently all subjects use the same webhook (can be customized per subject)
+- Each subject has its own dedicated AI tutor webhook:
+  - Computer Science: dfd0e679-6061-412e-8a7c-13ff03644d96
+  - Social Studies: d6858a76-859c-4afe-88ef-dbfc6c88cabf
+  - English: a768c38e-dc27-4518-9071-decea7861615
+  - Mathematics: 9d5b7124-8954-4908-86b5-2317d3d5cb3d
+  - Nepali: 08ce6210-3f9b-44d2-be0a-f5bd1bf32603
+  - Science: student-tutor (default)
 
 ### Third-Party Services
 - JWT for authentication tokens (`jsonwebtoken`, `jwt-decode`)

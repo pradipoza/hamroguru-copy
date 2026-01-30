@@ -6,12 +6,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const AI_TUTOR_WEBHOOKS: Record<string, string> = {
+  computer: 'https://pradipoza.app.n8n.cloud/webhook/dfd0e679-6061-412e-8a7c-13ff03644d96',
+  computer_science: 'https://pradipoza.app.n8n.cloud/webhook/dfd0e679-6061-412e-8a7c-13ff03644d96',
+  social: 'https://pradipoza.app.n8n.cloud/webhook/d6858a76-859c-4afe-88ef-dbfc6c88cabf',
+  social_studies: 'https://pradipoza.app.n8n.cloud/webhook/d6858a76-859c-4afe-88ef-dbfc6c88cabf',
+  english: 'https://pradipoza.app.n8n.cloud/webhook/a768c38e-dc27-4518-9071-decea7861615',
+  math: 'https://pradipoza.app.n8n.cloud/webhook/9d5b7124-8954-4908-86b5-2317d3d5cb3d',
+  mathematics: 'https://pradipoza.app.n8n.cloud/webhook/9d5b7124-8954-4908-86b5-2317d3d5cb3d',
+  nepali: 'https://pradipoza.app.n8n.cloud/webhook/08ce6210-3f9b-44d2-be0a-f5bd1bf32603',
   science: 'https://pradipoza.app.n8n.cloud/webhook/student-tutor',
-  math: 'https://pradipoza.app.n8n.cloud/webhook/student-tutor',
-  english: 'https://pradipoza.app.n8n.cloud/webhook/student-tutor',
-  nepali: 'https://pradipoza.app.n8n.cloud/webhook/student-tutor',
-  social: 'https://pradipoza.app.n8n.cloud/webhook/student-tutor',
-  computer: 'https://pradipoza.app.n8n.cloud/webhook/student-tutor',
 };
 
 export const getAllSubjects = async () => {
