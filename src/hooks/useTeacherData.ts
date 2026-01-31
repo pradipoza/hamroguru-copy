@@ -1,6 +1,39 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from './useAuth';
+
+export interface CreateAssignmentData {
+  title: string;
+  description?: string;
+  chapter?: string;
+  classId: string;
+  subjectId: string;
+  dueDate: string;
+}
+
+export function useCreateAssignment(): UseMutationResult<
+  any,
+  Error,
+  CreateAssignmentData,
+  unknown
+> {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateAssignmentData) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const response = await api.post('/teacher/assignments', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['teacherAssignments'] });
+      queryClient.invalidateQueries({ queryKey: ['teacherClasses'] });
+    },
+  });
+}
 
 export interface TeacherClass {
   id: string;

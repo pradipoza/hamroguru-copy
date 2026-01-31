@@ -101,6 +101,34 @@ export const getAssessments = async (req: AuthenticatedRequest, res: Response) =
   }
 };
 
+export const createAssignment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication error' });
+    }
+    
+    const { title, description, chapter, classId, subjectId, dueDate } = req.body;
+    
+    if (!title || !classId || !subjectId || !dueDate) {
+      return res.status(400).json({ message: 'Missing required fields: title, classId, subjectId, dueDate' });
+    }
+    
+    const data = await teacherService.createAssignment(req.user.id, {
+      title,
+      description,
+      chapter,
+      classId,
+      subjectId,
+      dueDate: new Date(dueDate),
+    });
+    
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    res.status(500).json({ message: 'Error creating assignment', error });
+  }
+};
+
 export const getQueries = async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!req.user) {

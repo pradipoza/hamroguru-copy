@@ -4,8 +4,9 @@ import { getHomeworkForSubject } from '@/services/subject.api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 interface HomeworkTabProps {
   subject: Subject;
@@ -25,49 +26,76 @@ function HomeworkCard({ homework }: { homework: any }) {
   const Icon = config.icon;
   const dueDate = new Date(homework.dueDate);
   const isOverdue = homework.status === 'pending' && dueDate < new Date();
+  
+  // Check if personalized content is ready
+  const hasPersonalizedContent = homework.hasPersonalizedContent;
+  const personalizedStatus = homework.personalizedStatus;
+  const isSubmitted = homework.isSubmitted;
+  const isPreparing = !isSubmitted && personalizedStatus === 'preparing';
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-sm">{homework.title}</h4>
-            {homework.description && (
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {homework.description}
-              </p>
-            )}
-            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-              {homework.chapter && <span>{homework.chapter}</span>}
+    <Link to={`/assignment/${homework.id}`} className="block">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-sm">{homework.title}</h4>
+                {hasPersonalizedContent && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Personalized
+                  </Badge>
+                )}
+                {isPreparing && (
+                  <Badge variant="outline" className="gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Preparing
+                  </Badge>
+                )}
+              </div>
+              {homework.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  {homework.description}
+                </p>
+              )}
+              <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                {homework.chapter && <span>{homework.chapter}</span>}
+              </div>
+              {isPreparing && (
+                <p className="text-xs text-blue-600 mt-2">
+                  Your personal HW provider is preparing HW for you...
+                </p>
+              )}
             </div>
+            <Badge variant={config.variant} className="gap-1 shrink-0">
+              <Icon className="w-3 h-3" />
+              {config.label}
+            </Badge>
           </div>
-          <Badge variant={config.variant} className="gap-1 shrink-0">
-            <Icon className="w-3 h-3" />
-            {config.label}
-          </Badge>
-        </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-xs text-muted-foreground">
-            {isOverdue ? (
-              <span className="text-destructive font-medium">
-                Overdue by {formatDistanceToNow(dueDate)}
-              </span>
-            ) : (
-              <span>Due {format(dueDate, 'MMM d, yyyy')}</span>
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-xs text-muted-foreground">
+              {isOverdue ? (
+                <span className="text-destructive font-medium">
+                  Overdue by {formatDistanceToNow(dueDate)}
+                </span>
+              ) : (
+                <span>Due {format(dueDate, 'MMM d, yyyy')}</span>
+              )}
+            </div>
+            {homework.status === 'pending' && (
+              <Button size="sm" variant="outline">
+                Submit
+              </Button>
+            )}
+            {homework.score !== null && typeof homework.score !== 'undefined' && (
+              <Badge variant="secondary">{homework.score} marks</Badge>
             )}
           </div>
-          {homework.status === 'pending' && (
-            <Button size="sm" variant="outline">
-              Submit
-            </Button>
-          )}
-          {homework.score !== null && typeof homework.score !== 'undefined' && (
-            <Badge variant="secondary">{homework.score} marks</Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 
@@ -77,6 +105,9 @@ export function HomeworkTab({ subject }: HomeworkTabProps) {
     queryFn: () => getHomeworkForSubject(subject.id),
   });
 
+  // Debug: Log what we're getting
+  console.log('Homework data:', homework);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -85,11 +116,14 @@ export function HomeworkTab({ subject }: HomeworkTabProps) {
     );
   }
 
-  if (isError || !homework) {
+  if (isError || !homework || !Array.isArray(homework)) {
     return (
       <Card className="p-8 text-center">
         <AlertCircle className="w-12 h-12 mx-auto mb-3 text-destructive" />
         <p className="text-muted-foreground">Could not load homework assignments.</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Debug: {typeof homework} - {JSON.stringify(homework)}
+        </p>
       </Card>
     );
   }

@@ -552,6 +552,48 @@ export const getAssessments = async (userId: string) => {
     .where(eq(teacherAssessments.teacherId, userId));
 };
 
+export const createAssignment = async (teacherId: string, assignmentData: {
+  title: string;
+  description?: string;
+  chapter?: string;
+  classId: string;
+  subjectId: string;
+  dueDate: Date;
+}) => {
+  try {
+    const [assignment] = await db
+      .insert(homeworkAssignments)
+      .values({
+        teacherId,
+        title: assignmentData.title,
+        description: assignmentData.description || null,
+        chapter: assignmentData.chapter || null,
+        classId: assignmentData.classId,
+        subjectId: assignmentData.subjectId,
+        dueDate: assignmentData.dueDate,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning({
+        id: homeworkAssignments.id,
+        sequenceId: homeworkAssignments.sequenceId,
+        title: homeworkAssignments.title,
+        description: homeworkAssignments.description,
+        chapter: homeworkAssignments.chapter,
+        classId: homeworkAssignments.classId,
+        subjectId: homeworkAssignments.subjectId,
+        dueDate: homeworkAssignments.dueDate,
+        createdAt: homeworkAssignments.createdAt,
+        updatedAt: homeworkAssignments.updatedAt,
+      });
+    
+    return assignment;
+  } catch (error) {
+    console.error('Error creating assignment in service:', error);
+    throw error;
+  }
+};
+
 export const getQueries = async (userId: string) => {
   const queries = await db
     .select({

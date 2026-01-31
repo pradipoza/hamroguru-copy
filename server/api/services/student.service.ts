@@ -4,6 +4,7 @@ import {
   subjects,
   homeworkAssignments,
   homeworkSubmissions,
+  personalizedAssignments,
   profiles,
   classes,
   schools,
@@ -964,4 +965,160 @@ export const getProgressSummary = async (userId: string) => {
       time: activity.date.toISOString(),
     })),
   };
+};
+
+export const getHomeworkBySubject = async (userId: string, subjectCode: string) => {
+  const profileData = await getStudentProfile(userId);
+  
+  if (!profileData?.classId) {
+    return [];
+  }
+
+  const assignments = await db
+    .select({
+      id: homeworkAssignments.id,
+      title: homeworkAssignments.title,
+      description: homeworkAssignments.description,
+      chapter: homeworkAssignments.chapter,
+      dueDate: homeworkAssignments.dueDate,
+      createdAt: homeworkAssignments.createdAt,
+      subjectCode: subjects.code,
+      subjectName: subjects.name,
+    })
+    .from(homeworkAssignments)
+    .leftJoin(subjects, eq(homeworkAssignments.subjectId, subjects.id))
+    .where(and(
+      eq(homeworkAssignments.classId, profileData.classId),
+      eq(subjects.code, subjectCode)
+    ));
+
+  const assignmentIds = assignments.map(a => a.id);
+  
+  // Get personalized assignments for this student
+  const personalizedAssignmentsData = assignmentIds.length > 0
+    ? await db
+        .select({
+          assignmentId: personalizedAssignments.assignmentId,
+          status: personalizedAssignments.status,
+          generatedAt: personalizedAssignments.generatedAt,
+        })
+        .from(personalizedAssignments)
+        .where(and(
+          eq(personalizedAssignments.studentId, userId),
+          inArray(personalizedAssignments.assignmentId, assignmentIds)
+        ))
+    : [];
+
+  // Get submissions
+  const submissions = assignmentIds.length > 0 
+    ? await db
+        .select({ 
+          assignmentId: homeworkSubmissions.assignmentId,
+          submittedAt: homeworkSubmissions.submittedAt,
+          status: homeworkSubmissions.status,
+        })
+        .from(homeworkSubmissions)
+        .where(and(
+          eq(homeworkSubmissions.studentId, userId),
+          inArray(homeworkSubmissions.assignmentId, assignmentIds)
+        ))
+    : [];
+
+  const personalizedMap = new Map(
+    personalizedAssignmentsData.map(p => [p.assignmentId, p])
+  );
+  
+  const submissionMap = new Map(
+    submissions.map(s => [s.assignmentId, s])
+  );
+
+  return assignments.map(assignment => {
+    const personalized = personalizedMap.get(assignment.id);
+    const submission = submissionMap.get(assignment.id);
+    
+    // If assignment is submitted, don't show preparing message
+    const isSubmitted = !!submission;
+    const hasPersonalizedContent = !!personalized;
+    
+    return {
+      ...assignment,
+      assignedDate: assignment.createdAt,
+      submittedAt: submission?.submittedAt || null,
+      status: submission?.status || 'pending',
+      hasPersonalizedContent: hasPersonalizedContent,
+      personalizedStatus: isSubmitted ? 'completed' : (personalized?.status || 'preparing'),
+      personalizedGeneratedAt: personalized?.generatedAt || null,
+      isSubmitted: isSubmitted,
+    };
+  });
+};
+
+export const getPersonalizedAssignment = async (userId: string, assignmentId: string) => {
+  const [personalizedData] = await db
+    .select({
+      id: personalizedAssignments.id,
+      assignmentId: personalizedAssignments.assignmentId,
+      personalizedContent: personalizedAssignments.personalizedContent,
+      questions: personalizedAssignments.questions,
+      difficulty: personalizedAssignments.difficulty,
+      estimatedTime: personalizedAssignments.estimatedTime,
+      learningObjectives: personalizedAssignments.learningObjectives,
+      personalizedInstructions: personalizedAssignments.personalizedInstructions,
+      status: personalizedAssignments.status,
+      generatedAt: personalizedAssignments.generatedAt,
+    })
+    .from(personalizedAssignments)
+    .where(and(
+      eq(personalizedAssignments.studentId, userId),
+      eq(personalizedAssignments.assignmentId, assignmentId)
+    ));
+
+  if (!personalizedData) {
+    return null;
+  }
+
+  // Get basic assignment info
+  const [assignmentInfo] = await db
+    .select({
+      title: homeworkAssignments.title,
+      description: homeworkAssignments.description,
+      chapter: homeworkAssignments.chapter,
+      dueDate: homeworkAssignments.dueDate,
+      subjectName: subjects.name,
+      subjectCode: subjects.code,
+    })
+    .from(homeworkAssignments)
+    .leftJoin(subjects, eq(homeworkAssignments.subjectId, subjects.id))
+    .where(eq(homeworkAssignments.id, assignmentId));
+
+  return {
+    ...personalizedData,
+    assignment: assignmentInfo,
+  };
+};
+
+export const submitHomework = async (userId: string, assignmentId: string, images: string[]) => {
+  const [submission] = await db
+    .insert(homeworkSubmissions)
+    .values({
+      assignmentId,
+      studentId: userId,
+      images,
+      status: 'submitted',
+      submittedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [homeworkSubmissions.assignmentId, homeworkSubmissions.studentId],
+      set: {
+        images,
+        status: 'submitted',
+        submittedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  return submission;
 };

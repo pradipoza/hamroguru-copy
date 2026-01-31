@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, unique, pgEnum, jsonb, decimal, boolean, date, customType } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, integer, unique, pgEnum, jsonb, decimal, boolean, date, customType, serial } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 const vector = customType<{ data: number[]; driverData: string }>({
@@ -106,6 +106,7 @@ export const studentProfiles = pgTable('student_profiles', {
 
 export const homeworkAssignments = pgTable('homework_assignments', {
   id: uuid('id').primaryKey().defaultRandom(),
+  sequenceId: serial('sequence_id').unique(), // Auto-increment for n8n trigger
   classId: uuid('class_id').notNull().references(() => classes.id, { onDelete: 'cascade' }),
   subjectId: uuid('subject_id').notNull().references(() => subjects.id, { onDelete: 'cascade' }),
   teacherId: uuid('teacher_id').references(() => users.id, { onDelete: 'set null' }),
@@ -132,6 +133,26 @@ export const homeworkSubmissions = pgTable('homework_submissions', {
 }, (table) => {
   return {
     uniqueSubmission: unique('homework_submissions_assignment_id_student_id_unique').on(table.assignmentId, table.studentId),
+  };
+});
+
+export const personalizedAssignments = pgTable('personalized_assignments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  assignmentId: uuid('assignment_id').notNull().references(() => homeworkAssignments.id, { onDelete: 'cascade' }),
+  studentId: uuid('student_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  personalizedContent: jsonb('personalized_content').notNull(),
+  questions: jsonb('questions').notNull(),
+  difficulty: text('difficulty').default('medium'),
+  estimatedTime: integer('estimated_time').default(30),
+  learningObjectives: text('learning_objectives').array(),
+  personalizedInstructions: text('personalized_instructions'),
+  status: text('status').default('ready'),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+  return {
+    uniquePersonalizedAssignment: unique('personalized_assignments_assignment_id_student_id_unique').on(table.assignmentId, table.studentId),
   };
 });
 
@@ -357,11 +378,24 @@ export const subjectTextbookEmbeddings = pgTable('subject_textbook_embeddings', 
 });
 
 // RELATIONS
+export const studentProfilesRelations = relations(studentProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [studentProfiles.userId],
+    references: [users.id],
+  }),
+  class: one(classes, {
+    fields: [studentProfiles.classId],
+    references: [classes.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles),
   roles: many(userRoles),
   studentProfile: one(studentProfiles),
   teacherProfile: one(teacherProfiles),
+  homeworkSubmissions: many(homeworkSubmissions),
+  personalizedAssignments: many(personalizedAssignments),
 }));
 
 export const profilesRelations = relations(profiles, ({ one }) => ({
@@ -386,13 +420,41 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
   students: many(studentProfiles),
 }));
 
-export const studentProfilesRelations = relations(studentProfiles, ({ one }) => ({
-  user: one(users, {
-    fields: [studentProfiles.userId],
+export const homeworkAssignmentsRelations = relations(homeworkAssignments, ({ one, many }) => ({
+  class: one(classes, {
+    fields: [homeworkAssignments.classId],
+    references: [classes.id],
+  }),
+  subject: one(subjects, {
+    fields: [homeworkAssignments.subjectId],
+    references: [subjects.id],
+  }),
+  teacher: one(users, {
+    fields: [homeworkAssignments.teacherId],
     references: [users.id],
   }),
-  class: one(classes, {
-    fields: [studentProfiles.classId],
-    references: [classes.id],
+  submissions: many(homeworkSubmissions),
+  personalizedAssignments: many(personalizedAssignments),
+}));
+
+export const homeworkSubmissionsRelations = relations(homeworkSubmissions, ({ one }) => ({
+  assignment: one(homeworkAssignments, {
+    fields: [homeworkSubmissions.assignmentId],
+    references: [homeworkAssignments.id],
+  }),
+  student: one(users, {
+    fields: [homeworkSubmissions.studentId],
+    references: [users.id],
+  }),
+}));
+
+export const personalizedAssignmentsRelations = relations(personalizedAssignments, ({ one }) => ({
+  assignment: one(homeworkAssignments, {
+    fields: [personalizedAssignments.assignmentId],
+    references: [homeworkAssignments.id],
+  }),
+  student: one(users, {
+    fields: [personalizedAssignments.studentId],
+    references: [users.id],
   }),
 }));

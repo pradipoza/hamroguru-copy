@@ -8,6 +8,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { TeacherLayout } from "./components/layout/TeacherLayout";
 import Dashboard from "./pages/Dashboard";
 import SubjectPage from "./pages/SubjectPage";
+import AssignmentPage from "./pages/AssignmentPage";
 import PendingTasksPage from "./pages/PendingTasksPage";
 import ConsultantPage from "./pages/ConsultantPage";
 import ProgressPage from "./pages/ProgressPage";
@@ -85,6 +86,7 @@ function AppRoutes() {
       {/* Student Routes */}
       <Route path="/" element={<ProtectedRoute allowedRoles={['student', 'admin']}><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
       <Route path="/subject/:subjectId" element={<ProtectedRoute allowedRoles={['student', 'admin']}><AppLayout><SubjectPage /></AppLayout></ProtectedRoute>} />
+      <Route path="/assignment/:assignmentId" element={<ProtectedRoute allowedRoles={['student', 'admin']}><AppLayout><AssignmentPage /></AppLayout></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute allowedRoles={['student', 'admin']}><AppLayout><PendingTasksPage /></AppLayout></ProtectedRoute>} />
       <Route path="/consultant" element={<ProtectedRoute allowedRoles={['student', 'admin']}><AppLayout><ConsultantPage /></AppLayout></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute allowedRoles={['student', 'admin']}><AppLayout><ProgressPage /></AppLayout></ProtectedRoute>} />

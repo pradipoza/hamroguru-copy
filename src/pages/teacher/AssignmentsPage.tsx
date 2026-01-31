@@ -23,10 +23,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Sparkles, Clock, CheckCircle2, Loader2 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { useTeacherAssignments, useTeacherClasses, useTeacherSubmissions } from '@/hooks/useTeacherData';
+import { useTeacherAssignments, useTeacherClasses, useTeacherSubmissions, useCreateAssignment } from '@/hooks/useTeacherData';
 
 export default function AssignmentsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    chapter: '',
+    classId: '',
+    subjectId: '',
+    dueDate: '',
+  });
+  
+  const createAssignmentMutation = useCreateAssignment();
   const { data: assignments = [], isLoading: assignmentsLoading } = useTeacherAssignments();
   const { data: submissions = [], isLoading: submissionsLoading } = useTeacherSubmissions('pending_review');
   const { data: classes = [], isLoading: classesLoading } = useTeacherClasses();
@@ -35,6 +45,35 @@ export default function AssignmentsPage() {
   const activeAssignments = (assignments || []).filter(a => a.dueDate > new Date());
   const pastAssignments = (assignments || []).filter(a => a.dueDate <= new Date());
   const pendingSubmissions = submissions || [];
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateAssignment = async () => {
+    if (!formData.title || !formData.classId || !formData.subjectId || !formData.dueDate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await createAssignmentMutation.mutateAsync(formData);
+      setIsCreateOpen(false);
+      setFormData({
+        title: '',
+        description: '',
+        chapter: '',
+        classId: '',
+        subjectId: '',
+        dueDate: '',
+      });
+    } catch (error) {
+      console.error('Failed to create assignment:', error);
+      alert('Failed to create assignment. Please try again.');
+    }
+  };
+
+  const selectedClass = classes.find(c => c.classId === formData.classId);
 
   if (isLoading) {
     return (
@@ -66,12 +105,17 @@ export default function AssignmentsPage() {
             </DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" placeholder="e.g., Chapter 3 Practice Problems" />
+                <Label htmlFor="title">Title *</Label>
+                <Input 
+                  id="title" 
+                  placeholder="e.g., Chapter 3 Practice Problems" 
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="class">Class</Label>
-                <Select>
+                <Label htmlFor="class">Class *</Label>
+                <Select value={formData.classId} onValueChange={(value) => handleInputChange('classId', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
@@ -85,8 +129,28 @@ export default function AssignmentsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="subject">Subject *</Label>
+                <Select value={formData.subjectId} onValueChange={(value) => handleInputChange('subjectId', value)} disabled={!selectedClass}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={selectedClass ? "Select subject" : "Select class first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedClass && (
+                      <SelectItem key={selectedClass.subjectId} value={selectedClass.subjectId}>
+                        {selectedClass.subjectName}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="chapter">Chapter</Label>
-                <Input id="chapter" placeholder="e.g., Chapter 3: Quadratic Equations" />
+                <Input 
+                  id="chapter" 
+                  placeholder="e.g., Chapter 3: Quadratic Equations" 
+                  value={formData.chapter}
+                  onChange={(e) => handleInputChange('chapter', e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
@@ -94,18 +158,35 @@ export default function AssignmentsPage() {
                   id="description" 
                   placeholder="Describe the assignment..."
                   rows={3}
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dueDate">Due Date</Label>
-                <Input id="dueDate" type="date" />
+                <Label htmlFor="dueDate">Due Date *</Label>
+                <Input 
+                  id="dueDate" 
+                  type="date" 
+                  value={formData.dueDate}
+                  onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                />
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsCreateOpen(false)}>
-                  Create Assignment
+                <Button 
+                  onClick={handleCreateAssignment}
+                  disabled={createAssignmentMutation.isPending}
+                >
+                  {createAssignmentMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Assignment'
+                  )}
                 </Button>
               </div>
             </div>

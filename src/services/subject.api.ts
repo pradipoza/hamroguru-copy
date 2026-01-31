@@ -8,7 +8,17 @@ export const getSubjectByCode = async (subjectCode: string) => {
 };
 
 export const getHomeworkForSubject = async (subjectCode: string) => {
-  const response = await api.get(`${API_URL}/${subjectCode}/homework`);
+  const response = await api.get(`/student/subjects/${subjectCode}/homework`);
+  return response.data;
+};
+
+export const getPersonalizedAssignment = async (assignmentId: string) => {
+  const response = await api.get(`/student/assignments/${assignmentId}/personalized`);
+  return response.data;
+};
+
+export const submitHomework = async (assignmentId: string, images: string[]) => {
+  const response = await api.post(`/student/assignments/${assignmentId}/submit`, { images });
   return response.data;
 };
 

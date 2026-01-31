@@ -7,6 +7,7 @@ const router = Router();
 router.get('/profile', verifyToken, teacherController.getProfile);
 router.get('/classes', verifyToken, teacherController.getClasses);
 router.get('/students', verifyToken, teacherController.getStudents);
+router.post('/assignments', verifyToken, teacherController.createAssignment);
 router.get('/assignments', verifyToken, teacherController.getAssignments);
 router.get('/submissions', verifyToken, teacherController.getSubmissions);
 router.get('/lesson-plans', verifyToken, teacherController.getLessonPlans);

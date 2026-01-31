@@ -1,0 +1,2 @@
+ALTER TABLE "homework_assignments" ADD COLUMN "sequence_id" serial NOT NULL;--> statement-breakpoint
+ALTER TABLE "homework_assignments" ADD CONSTRAINT "homework_assignments_sequence_id_unique" UNIQUE("sequence_id");

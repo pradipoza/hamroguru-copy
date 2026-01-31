@@ -22,6 +22,20 @@
       "when": 1769677764212,
       "tag": "0002_orange_triton",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769824739053,
+      "tag": "0003_lush_triton",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769828426239,
+      "tag": "0004_swift_xorn",
+      "breakpoints": true
     }
   ]
 }
