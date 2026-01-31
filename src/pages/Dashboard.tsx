@@ -40,6 +40,8 @@ export default function Dashboard() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard'],
     queryFn: getDashboardData,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   const { profile, subjects, pendingTasks } = data || {};

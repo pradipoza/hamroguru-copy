@@ -48,6 +48,8 @@ export default function SubjectPage() {
     queryKey: ['subject', subjectId],
     queryFn: () => getSubjectByCode(subjectId!),
     enabled: !!subjectId,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   if (isLoading) {

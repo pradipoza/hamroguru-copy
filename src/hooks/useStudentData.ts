@@ -23,6 +23,8 @@ export function useStudentProfile() {
       return data;
     },
     enabled: !!user,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -59,6 +61,8 @@ export function useStudentProfileDetails() {
       };
     },
     enabled: !!user,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -73,6 +77,8 @@ export function useStudentProgress() {
       return data;
     },
     enabled: !!user,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -90,6 +96,8 @@ export function usePendingTasks() {
       }));
     },
     enabled: !!user,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -109,6 +117,8 @@ export function useHomeworkBySubject(subjectCode: string) {
       }));
     },
     enabled: !!user && !!subjectCode,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -126,6 +136,8 @@ export function useNotesBySubject(subjectCode: string) {
       }));
     },
     enabled: !!user && !!subjectCode,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -144,6 +156,8 @@ export function useTestsBySubject(subjectCode: string) {
       }));
     },
     enabled: !!user && !!subjectCode,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -155,5 +169,7 @@ export function useResourcesBySubject(subjectCode: string) {
       return data || [];
     },
     enabled: !!subjectCode,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }

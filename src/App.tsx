@@ -27,7 +27,18 @@ import LessonPlanPage from "./pages/teacher/LessonPlanPage";
 import TeacherProfilePage from "./pages/teacher/TeacherProfilePage";
 import { Loader2 } from "lucide-react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 10 * 60 * 1000, // 10 minutes minimum
+      gcTime: 20 * 60 * 1000, // 20 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: true,
+      retry: 1,
+    },
+  },
+});
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, role, loading } = useAuth();

@@ -40,6 +40,8 @@ export function useSubjects() {
         upcomingTests: subject.upcomingTests || 0,
       }));
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
@@ -62,5 +64,7 @@ export function useSubjectByCode(code: string) {
       };
     },
     enabled: !!code,
+    staleTime: 10 * 60 * 1000, // 10 minutes minimum
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
