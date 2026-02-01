@@ -654,53 +654,169 @@ const seedAcademicData = async () => {
   }
 
   const lessonPlanRows: any[] = [];
-  teacherSeed.forEach((teacher, index) => {
+  
+  // Define realistic lesson topics by subject
+  const lessonTopicsBySubject: Record<string, string[]> = {
+    math: [
+      'Linear Equations and Graphing',
+      'Quadratic Functions', 
+      'Trigonometry Basics',
+      'Probability and Statistics',
+      'Geometry Proofs',
+      'Calculus Introduction',
+      'Word Problem Strategies',
+      'Mathematical Reasoning'
+    ],
+    science: [
+      'Cell Biology and Division',
+      'Chemical Reactions',
+      'Physics Laws and Formulas',
+      'Environmental Science',
+      'Human Anatomy',
+      'Scientific Method',
+      'Laboratory Techniques',
+      'Energy and Matter'
+    ],
+    english: [
+      'Essay Writing Structure',
+      'Poetry Analysis',
+      'Grammar and Punctuation',
+      'Reading Comprehension',
+      'Creative Writing',
+      'Literary Devices',
+      'Vocabulary Building',
+      'Public Speaking'
+    ],
+    nepali: [
+      'नेपाली व्याकरण',
+      'कविता विश्लेषण',
+      'निबन्ध लेखन',
+      'कथा वाचन',
+      'शुद्ध उच्चारण',
+      'साहित्यिक परिभाषा',
+      'अनुवाद कौशल',
+      'भाषण कला'
+    ],
+    social: [
+      'Nepalese History',
+      'Geography of Nepal',
+      'Civics and Citizenship',
+      'Economics Basics',
+      'World History',
+      'Map Reading Skills',
+      'Current Affairs',
+      'Social Studies'
+    ],
+    computer: [
+      'Programming Fundamentals',
+      'Web Development Basics',
+      'Database Concepts',
+      'Computer Hardware',
+      'Software Applications',
+      'Internet and Security',
+      'Algorithm Design',
+      'Problem Solving'
+    ]
+  };
+  
+  // Define realistic student queries by subject
+  const studentQueriesBySubject: Record<string, string[]> = {
+    math: [
+      'How do we solve word problems systematically?',
+      'Why is the quadratic formula important?',
+      'Can you explain the proof of this theorem?',
+      'What are real-world applications of calculus?',
+      'How can I improve my problem-solving speed?'
+    ],
+    science: [
+      'Why does this chemical reaction occur?',
+      'How do we calculate velocity properly?',
+      'What are the steps in the scientific method?',
+      'Can you explain the cell division process?',
+      'How does energy transfer work in ecosystems?'
+    ],
+    english: [
+      'How should I structure my thesis statement?',
+      'What are the rules for comma usage?',
+      'How do I analyze poetry effectively?',
+      'Can you help me with vocabulary building?',
+      'What makes a good argumentative essay?'
+    ],
+    nepali: [
+      'कविताको भावपक्ष कसरी बुझ्ने?',
+      'निबन्धमा परिचय कसरी लेख्ने?',
+      'व्याकरणका नियमहरू के हुन्?',
+      'शुद्ध लेखनका लागि के ध्यान दिने?',
+      'भाषणमा आत्मविश्वास कसरी बढाउने?'
+    ],
+    social: [
+      'What were the main causes of this historical event?',
+      'How do we read political maps effectively?',
+      'What are our rights and responsibilities?',
+      'How does supply and demand affect prices?',
+      'Why is geography important in daily life?'
+    ],
+    computer: [
+      'How do we debug programs efficiently?',
+      'What is the difference between HTML and CSS?',
+      'How do databases store information?',
+      'Why is cybersecurity important?',
+      'What makes good algorithm design?'
+    ]
+  };
+  
+  // Define AI recommendations by teaching scenario
+  const aiRecommendations = [
+    'Use visual aids and diagrams to explain complex concepts.',
+    'Start with a 5-minute recap of previous lesson.',
+    'Incorporate real-world examples and case studies.',
+    'Use peer teaching and group activities.',
+    'Assign short exit tickets for immediate feedback.',
+    'Use interactive demonstrations and hands-on activities.',
+    'Provide differentiated materials for varying skill levels.',
+    'Include formative assessments throughout the lesson.',
+    'Use questioning techniques to check understanding.',
+    'Provide additional practice problems for homework.'
+  ];
+  
+  teacherSeed.forEach((teacher, teacherIndex) => {
     const subject = subjectByCode.get(teacher.subjectCode);
     if (!subject) return;
-    const baseDate = addDays(now, -3);
-    lessonPlanRows.push(
-      {
-        teacherId: insertedTeachers[index].id,
+    
+    const topics = lessonTopicsBySubject[teacher.subjectCode] || [];
+    const queries = studentQueriesBySubject[teacher.subjectCode] || [];
+    
+    // Generate 5 lesson plans per teacher with different statuses and dates
+    for (let i = 0; i < 5; i++) {
+      const lessonDate = addDays(now, -10 + (i * 3)); // Spread over 15 days
+      const status = i === 0 ? 'completed' : i === 1 ? 'completed' : i === 2 ? 'upcoming' : i === 3 ? 'upcoming' : 'missed';
+      const isCompleted = status === 'completed';
+      const hasFeedback = isCompleted && rng() > 0.3; // 70% of completed lessons have feedback
+      
+      // Generate realistic student queries for completed lessons
+      const studentQueriesData = isCompleted ? pickMany(queries, randInt(2, 4)).map(query => ({
+        studentId: pick(insertedStudents).id,
+        question: query,
+        timestamp: addDays(lessonDate, randInt(-1, 1)),
+        addressed: rng() > 0.4
+      })) : [];
+      
+      lessonPlanRows.push({
+        teacherId: insertedTeachers[teacherIndex].id,
         classId: schoolClass.id,
         subjectId: subject.id,
-        date: baseDate.toISOString().split('T')[0], // Convert to date string YYYY-MM-DD
-        topics: pickMany(['Introduction', 'Practice set', 'Revision', 'Quiz discussion'], 2),
-        studentQueries: [],
-        weakAreas: pickMany(weaknessesBySubject[teacher.subjectCode] || [], 2),
-        aiRecommendation: 'Use board examples and quick checks for understanding.',
-        status: 'completed',
-        completedAt: addDays(baseDate, 0),
-        feedbackCollected: true,
-        createdAt: addDays(baseDate, -2),
-        updatedAt: addDays(baseDate, -1),
-      },
-      {
-        teacherId: insertedTeachers[index].id,
-        classId: schoolClass.id,
-        subjectId: subject.id,
-        date: addDays(now, 0).toISOString().split('T')[0], // Convert to date string YYYY-MM-DD
-        topics: pickMany(['Concept review', 'Guided practice', 'Doubt clearing'], 2),
-        studentQueries: [],
-        weakAreas: pickMany(weaknessesBySubject[teacher.subjectCode] || [], 1),
-        aiRecommendation: 'Start with a 5-min recap and use peer teaching.',
-        status: 'upcoming',
-        createdAt: addDays(now, -1),
-        updatedAt: addDays(now, -1),
-      },
-      {
-        teacherId: insertedTeachers[index].id,
-        classId: schoolClass.id,
-        subjectId: subject.id,
-        date: addDays(now, 5).toISOString().split('T')[0], // Convert to date string YYYY-MM-DD
-        topics: pickMany(['Practice drills', 'Assessment prep'], 2),
-        studentQueries: [],
-        weakAreas: pickMany(weaknessesBySubject[teacher.subjectCode] || [], 1),
-        aiRecommendation: 'Assign a short exit ticket for feedback.',
-        status: 'upcoming',
-        createdAt: addDays(now, -1),
-        updatedAt: addDays(now, -1),
-      }
-    );
+        date: lessonDate.toISOString().split('T')[0],
+        topics: pickMany(topics, randInt(2, 3)),
+        studentQueries: studentQueriesData,
+        weakAreas: pickMany(weaknessesBySubject[teacher.subjectCode] || [], randInt(1, 2)),
+        aiRecommendation: pick(aiRecommendations),
+        status: status,
+        completedAt: isCompleted ? addDays(lessonDate, randInt(0, 1)) : null,
+        feedbackCollected: hasFeedback,
+        createdAt: addDays(lessonDate, -randInt(2, 5)),
+        updatedAt: isCompleted ? addDays(lessonDate, randInt(0, 2)) : addDays(lessonDate, -randInt(1, 3))
+      });
+    }
   });
   if (lessonPlanRows.length > 0) {
     await db.insert(lessonPlans).values(lessonPlanRows);
