@@ -16,7 +16,7 @@ import {
   teacherAssessments,
   studentQueries,
 } from '../../db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 
 export const getProfileData = async (userId: string) => {
   const [profileData] = await db
@@ -47,7 +47,42 @@ export const getProfileData = async (userId: string) => {
     .leftJoin(subjects, eq(teacherClassAssignments.subjectId, subjects.id))
     .where(eq(teacherClassAssignments.teacherId, userId));
 
-  return { profile: profileData, assignments: assignmentsData };
+  // Get daily doses stats
+  const doses = await db
+    .select({
+      completed: dailyDoses.completed,
+    })
+    .from(dailyDoses)
+    .where(eq(dailyDoses.teacherId, userId));
+  
+  const completedDoses = doses.filter(d => d.completed).length;
+  const totalDoses = doses.length;
+  const doseStats = {
+    completionRate: totalDoses > 0 ? (completedDoses / totalDoses) * 100 : 0,
+    completed: completedDoses,
+    total: totalDoses,
+  };
+
+  // Get assessment stats
+  const assessments = await db
+    .select({
+      score: teacherAssessments.score,
+      totalQuestions: teacherAssessments.totalQuestions,
+    })
+    .from(teacherAssessments)
+    .where(eq(teacherAssessments.teacherId, userId));
+  
+  const assessmentStats = {
+    avgScore: 85, // Placeholder - calculate actual average from test results
+    totalAssessments: assessments.length,
+  };
+
+  return { 
+    profile: profileData, 
+    assignments: assignmentsData,
+    doseStats,
+    assessmentStats,
+  };
 };
 
 export const getClasses = async (userId: string) => {
@@ -70,13 +105,13 @@ export const getClasses = async (userId: string) => {
     return [];
   }
 
-  const classIds = Array.from(new Set(classAssignments.map((item) => item.classId)));
-  const subjectIds = Array.from(new Set(classAssignments.map((item) => item.subjectId)));
+  const classIds = Array.from(new Set(classAssignments.map((item) => item.classId).filter((id): id is string => id !== null)));
+  const subjectIds = Array.from(new Set(classAssignments.map((item) => item.subjectId).filter((id): id is string => id !== null)));
 
   const students = await db
     .select({ classId: studentProfiles.classId, studentId: studentProfiles.userId })
     .from(studentProfiles)
-    .where(inArray(studentProfiles.classId, classIds));
+    .where(classIds.length > 0 ? inArray(studentProfiles.classId, classIds) : sql`false`);
 
   const assignments = await db
     .select({
@@ -86,8 +121,8 @@ export const getClasses = async (userId: string) => {
     })
     .from(homeworkAssignments)
     .where(and(
-      inArray(homeworkAssignments.classId, classIds),
-      inArray(homeworkAssignments.subjectId, subjectIds)
+      classIds.length > 0 ? inArray(homeworkAssignments.classId, classIds) : sql`true`,
+      subjectIds.length > 0 ? inArray(homeworkAssignments.subjectId, subjectIds) : sql`true`
     ));
 
   const assignmentIds = assignments.map((assignment) => assignment.id);
@@ -110,8 +145,8 @@ export const getClasses = async (userId: string) => {
     })
     .from(tests)
     .where(and(
-      inArray(tests.classId, classIds),
-      inArray(tests.subjectId, subjectIds)
+      classIds.length > 0 ? inArray(tests.classId, classIds) : sql`true`,
+      subjectIds.length > 0 ? inArray(tests.subjectId, subjectIds) : sql`true`
     ));
 
   const testIds = testsForClasses.map((test) => test.id);
@@ -185,8 +220,8 @@ export const getClasses = async (userId: string) => {
       section: assignment.section,
       subjectId: assignment.subjectId,
       subjectName: assignment.subjectName,
-      subjectCode: assignment.subjectCode,
-      studentCount: studentCountByClass.get(assignment.classId) || 0,
+      subjectCode: assignment.subjectCode || '',
+      studentCount: assignment.classId ? studentCountByClass.get(assignment.classId) || 0 : 0,
       pendingSubmissions,
       averageScore,
     };

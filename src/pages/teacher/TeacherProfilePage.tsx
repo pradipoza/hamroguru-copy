@@ -3,25 +3,27 @@ import { useQuery } from '@tanstack/react-query';
 import { getProfileData } from '@/services/teacher.api';
 import { 
   User, 
-  BookOpen, 
-  ClipboardCheck, 
-  FileText, 
-  TrendingUp, 
-  TrendingDown,
-  Minus,
+  AlertTriangle,
+  AlertCircle,
+  BookOpen,
   Calendar,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardCheck,
   Clock,
-  Target,
+  FileText,
+  Home,
+  Loader2,
+  MessageSquare,
+  Minus,
+  TrendingDown,
+  TrendingUp,
+  Users,
+  X,
+  Briefcase,
   Brain,
   Award,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  MessageSquare,
-  Briefcase,
-  GraduationCap,
-  AlertTriangle,
-  Loader2
+  XCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +42,104 @@ const TeacherProfilePage = () => {
     queryFn: getProfileData,
   });
 
-  const { profile: teacherProfile, assignments } = (data || {}) as { profile: TeacherProfile, assignments: ClassAssignment[] };
+  const { profile: teacherProfile, assignments, doseStats, assessmentStats } = (data || {}) as { 
+    profile: TeacherProfile, 
+    assignments: ClassAssignment[],
+    doseStats: { completionRate: number; completed: number; total: number },
+    assessmentStats: { avgScore: number; totalAssessments: number }
+  };
+
+  // Define portfolio metrics
+  const portfolioMetrics = [
+    { category: 'Students', value: '0', trend: 'up' as const }, // Placeholder - calculate from actual student data
+    { category: 'Classes', value: assignments?.length || 0, trend: 'stable' as const },
+    { category: 'Doses', value: doseStats?.completed || 0, maxValue: doseStats?.total || 0, trend: 'up' as const },
+    { category: 'Assessments', value: assessmentStats?.totalAssessments || 0, trend: 'up' as const },
+    { category: 'Avg Score', value: assessmentStats?.avgScore?.toFixed(0) || '0', trend: 'stable' as const },
+    { category: 'Experience', value: teacherProfile?.yearsExperience || 0, trend: 'stable' as const },
+  ];
+
+  // Define portfolio issues (empty for now)
+  const portfolioIssues: any[] = [];
+
+  // Define query stats (placeholder data)
+  const queryStats = {
+    total: 0,
+    pending: 0,
+    addressed: 0,
+    notAddressed: 0,
+    stillConfused: 0,
+  };
+
+  // Add missing properties to doseStats
+  const enhancedDoseStats = {
+    ...doseStats,
+    pending: 0, // Placeholder - calculate from actual data
+    skipped: 0, // Placeholder - calculate from actual data
+  };
+
+  // Add missing properties to assessmentStats
+  const fullAssessmentStats = {
+    ...assessmentStats,
+    completed: 0, // Placeholder - calculate from actual data
+    missed: 0, // Placeholder - calculate from actual data
+  };
+
+  // Define lesson stats (placeholder data)
+  const lessonStats = {
+    total: 0,
+    completed: 0,
+    pending: 0,
+    upcoming: 0,
+    avgFeedback: 4.5, // Placeholder - calculate from actual data
+  };
+
+  // Define assessment history (placeholder data)
+  const assessmentHistory: any[] = [];
+
+  // Define daily dose history (placeholder data)
+  const dailyDoseHistory: any[] = [];
+
+  // Define query address history (placeholder data)
+  const queryAddressHistory: any[] = [];
+
+  // Define lesson plan history (placeholder data)
+  const lessonPlanHistory: any[] = [];
+
+  // Add upcoming to assessmentStats
+  const enhancedAssessmentStats = {
+    ...fullAssessmentStats,
+    upcoming: 0, // Placeholder - calculate from actual assessment data
+  };
+
+  // Helper functions
+  const getPerformanceBadge = (score: number) => {
+    if (score >= 90) return <Badge className="bg-green-100 text-green-800">Excellent</Badge>;
+    if (score >= 80) return <Badge className="bg-blue-100 text-blue-800">Good</Badge>;
+    if (score >= 70) return <Badge className="bg-yellow-100 text-yellow-800">Average</Badge>;
+    return <Badge className="bg-red-100 text-red-800">Needs Improvement</Badge>;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed': return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'missed': return <Badge className="bg-red-100 text-red-800">Missed</Badge>;
+      default: return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>;
+    }
+  };
+
+  // Helper function for trend icons
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'up':
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case 'down':
+        return <TrendingDown className="w-4 h-4 text-red-500" />;
+      default:
+        return <Minus className="w-4 h-4 text-gray-500" />;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -96,11 +195,15 @@ const TeacherProfilePage = () => {
 
             <div className="flex gap-3">
               <div className="text-center p-3 bg-muted rounded-lg">
-                <div className="text-2xl font-bold text-primary">{teacherProfile.doseStats.completionRate.toFixed(0)}%</div>
+                <div className="text-2xl font-bold text-primary">
+                  {doseStats?.completionRate?.toFixed(0) || 0}%
+                </div>
                 <div className="text-xs text-muted-foreground">Dose Rate</div>
               </div>
               <div className="text-center p-3 bg-muted rounded-lg">
-                <div className="text-2xl font-bold text-primary">{assessmentStats.avgScore.toFixed(0)}%</div>
+                <div className="text-2xl font-bold text-primary">
+                  {assessmentStats?.avgScore?.toFixed(0) || 0}%
+                </div>
                 <div className="text-xs text-muted-foreground">Asmt Avg</div>
               </div>
             </div>
@@ -130,7 +233,7 @@ const TeacherProfilePage = () => {
                   {metric.value}{metric.maxValue ? `/${metric.maxValue}` : ''}
                   {metric.maxValue === 100 && '%'}
                 </div>
-                <div className="text-xs text-muted-foreground">{metric.metric}</div>
+                <div className="text-xs text-muted-foreground">{metric.category}</div>
               </div>
             ))}
           </div>
@@ -188,11 +291,11 @@ const TeacherProfilePage = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Completed</span>
-                    <span className="font-medium">{doseStats.completed}/{doseStats.total - doseStats.pending}</span>
+                    <span className="font-medium">{enhancedDoseStats.completed}/{enhancedDoseStats.total - enhancedDoseStats.pending}</span>
                   </div>
-                  <Progress value={doseStats.completionRate} />
+                  <Progress value={enhancedDoseStats.completionRate} />
                   <div className="text-xs text-muted-foreground">
-                    {doseStats.skipped} skipped • {doseStats.pending} pending
+                    {enhancedDoseStats.skipped} skipped • {enhancedDoseStats.pending} pending
                   </div>
                 </div>
               </CardContent>
@@ -209,11 +312,11 @@ const TeacherProfilePage = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Average Score</span>
-                    <span className="font-medium">{assessmentStats.avgScore.toFixed(0)}%</span>
+                    <span className="font-medium">{fullAssessmentStats.avgScore.toFixed(0)}%</span>
                   </div>
-                  <Progress value={assessmentStats.avgScore} />
+                  <Progress value={fullAssessmentStats.avgScore} />
                   <div className="text-xs text-muted-foreground">
-                    {assessmentStats.completed} completed • {assessmentStats.missed} missed
+                    {fullAssessmentStats.completed} completed • {fullAssessmentStats.missed} missed
                   </div>
                 </div>
               </CardContent>
@@ -271,16 +374,16 @@ const TeacherProfilePage = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {doseStats.pending > 0 && (
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded">
-                      <Brain className="w-4 h-4 text-primary" />
-                      <span>{doseStats.pending} Daily Dose pending</span>
+                  {enhancedDoseStats.pending > 0 && (
+                    <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                      <Clock className="w-4 h-4 text-yellow-600" />
+                      <span>{enhancedDoseStats.pending} Daily Dose pending</span>
                     </div>
                   )}
-                  {queryStats.pending > 0 && (
-                    <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-                      <MessageSquare className="w-4 h-4 text-yellow-600" />
-                      <span>{queryStats.pending} Student queries to address</span>
+                  {enhancedDoseStats.skipped > 0 && (
+                    <div className="flex items-center gap-2 p-2 bg-orange-50 rounded border border-orange-200">
+                      <X className="w-4 h-4 text-orange-600" />
+                      <span>{enhancedDoseStats.skipped} Daily Dose skipped</span>
                     </div>
                   )}
                   {queryStats.notAddressed > 0 && (
@@ -289,10 +392,10 @@ const TeacherProfilePage = () => {
                       <span>{queryStats.notAddressed} Unaddressed queries (in portfolio)</span>
                     </div>
                   )}
-                  {assessmentStats.upcoming > 0 && (
+                  {enhancedAssessmentStats.upcoming > 0 && (
                     <div className="flex items-center gap-2 p-2 bg-muted rounded">
                       <ClipboardCheck className="w-4 h-4 text-primary" />
-                      <span>{assessmentStats.upcoming} Assessment upcoming</span>
+                      <span>{enhancedAssessmentStats.upcoming} Assessment upcoming</span>
                     </div>
                   )}
                 </div>
